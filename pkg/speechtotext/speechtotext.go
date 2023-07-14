@@ -9,45 +9,28 @@ import (
 	"github.com/Microsoft/cognitive-services-speech-sdk-go/speech"
 )
 
-func sessionStartedHandler(event speech.SessionEventArgs) {
-	defer event.Close()
-	fmt.Println("Session Started (ID=", event.SessionID, ")")
-}
-
-func sessionStoppedHandler(event speech.SessionEventArgs) {
-	defer event.Close()
-	fmt.Println("Session Stopped (ID=", event.SessionID, ")")
-}
-
-func recognizingHandler(event speech.SpeechRecognitionEventArgs) {
-	defer event.Close()
-	fmt.Println("Recognizing:", event.Result.Text)
-}
-
-func recognizedHandler(event speech.SpeechRecognitionEventArgs) {
-	defer event.Close()
-	fmt.Println("Recognized:", event.Result.Text)
-}
-
-func cancelledHandler(event speech.SpeechRecognitionCanceledEventArgs) {
-	defer event.Close()
-	fmt.Println("Received a cancellation: ", event.ErrorDetails)
-	fmt.Println("Did you set the speech resource key and region values?")
-}
-
 type Recognizer struct {
-	SpeechConfig *speech.SpeechConfig
+	speechConfig *speech.SpeechConfig
+	languages    []string
 }
 
 func NewRecognizer() (*Recognizer, error) {
 	speechKey := os.Getenv("SPEECH_KEY")
 	speechRegion := os.Getenv("SPEECH_REGION")
+
 	speechConfig, err := speech.NewSpeechConfigFromSubscription(speechKey, speechRegion)
 	if err != nil {
 		return nil, err
 	}
+	// speechConfig.EnableAudioLogging()
+
 	return &Recognizer{
-		SpeechConfig: speechConfig,
+		speechConfig: speechConfig,
+		languages: []string{
+			"en-US",
+			"en-GB",
+			"fi-FI",
+		},
 	}, err
 }
 
@@ -61,7 +44,13 @@ func (r *Recognizer) HandleAudioLink(url string) (string, error) {
 		return "", fmt.Errorf("handleAudioLink: error creating newAudioConfig, %w", err)
 	}
 	defer audioConfig.Close()
-	speechRecognizer, err := speech.NewSpeechRecognizerFromConfig(r.SpeechConfig, audioConfig)
+
+	autodetect, err := speech.NewAutoDetectSourceLanguageConfigFromLanguages(r.languages)
+	if err != nil {
+		return "", err
+	}
+
+	speechRecognizer, err := speech.NewSpeechRecognizerFomAutoDetectSourceLangConfig(r.speechConfig, autodetect, audioConfig)
 	if err != nil {
 		return "", fmt.Errorf("handleAudioLink: error creating speechRecognizer, %w", err)
 	}
