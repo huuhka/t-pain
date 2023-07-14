@@ -10,7 +10,7 @@ import (
 
 type Bot struct {
 	bot        *tgbotapi.BotAPI
-	recognizer *speechtotext.Recognizer
+	recognizer *speechtotext.SDKWrapper
 }
 
 func Run() error {
@@ -54,7 +54,10 @@ func NewBot(botToken string) (*Bot, error) {
 
 	botObj.bot = bot
 
-	recognizer, err := speechtotext.NewRecognizer()
+	speechKey := os.Getenv("SPEECH_KEY")
+	speechRegion := os.Getenv("SPEECH_REGION")
+
+	recognizer, err := speechtotext.NewWrapper(speechKey, speechRegion)
 	if err != nil {
 		return nil, err
 	}

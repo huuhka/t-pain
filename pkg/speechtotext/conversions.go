@@ -31,9 +31,9 @@ func handleAudioFileSetup(url string) (string, error) {
 	return wavFileName, err
 }
 
-// ConvertOggToWav converts an Ogg audio file to a WAV file using FFmpeg.
+// convertOggToWav converts an Ogg audio file to a WAV file using FFmpeg.
 func convertOggToWav(inputFile string, outputFile string) error {
-	cmd := exec.Command("ffmpeg", "-i", inputFile, outputFile)
+	cmd := exec.Command("ffmpeg", "-i", inputFile, "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1", outputFile)
 	err := cmd.Run()
 	if err != nil {
 		return err

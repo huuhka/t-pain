@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/Microsoft/cognitive-services-speech-sdk-go/audio"
 	"io"
-	"log"
 	"net/http"
 	"os"
 )
@@ -42,6 +41,6 @@ func pumpURLIntoStream(url string, stream *audio.PushAudioInputStream) {
 func deleteFromDisk(fileName string) {
 	err := os.Remove(fileName)
 	if err != nil {
-		log.Println("Error deleting file: ", err)
+		fmt.Println("Error deleting file: ", err)
 	}
 }
