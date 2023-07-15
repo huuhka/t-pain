@@ -3,38 +3,44 @@ package speechtotext
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 func (wrapper *SDKWrapper) HandleAudioLink(url string) (string, error) {
 	// Download and convert
-	wavFile, err := handleAudioFileSetup(url)
+	wavFile, _ := handleAudioFileSetup(url)
 	defer deleteFromDisk(wavFile)
 
 	stop := make(chan int)
-	ready := make(chan struct{})
-	go PumpFileContinuously(stop, ready, wavFile, wrapper)
+	//ready := make(chan struct{})
+	//go PumpFileContinuously(stop, ready, wavFile, wrapper)
+
+	go PumpFileContinuously2(stop, wavFile, wrapper)
 
 	var resultText []string
 
-	err = wrapper.StartContinuous(func(event *SDKWrapperEvent) {
+	wrapper.StartContinuous(func(event *SDKWrapperEvent) {
 		defer event.Close()
 		switch event.EventType {
 		case Recognized:
 			resultText = append(resultText, event.Recognized.Result.Text)
 		case Recognizing:
 			fmt.Println("Got a recognizing event")
+			fmt.Println("Text: ", event.Recognizing.Result.Text)
 		case Cancellation:
 			fmt.Println("Got a cancellation event")
 		}
 	})
-	defer wrapper.StopContinuous()
-	if err != nil {
-		return "", err
-	}
-	select {
-	case <-ready:
-		wrapper.StopContinuous()
-	}
+	<-time.After(30 * time.Second)
+	wrapper.StopContinuous()
+	//defer wrapper.StopContinuous()
+	//if err != nil {
+	//	return "", err
+	//}
+	//select {
+	//case <-ready:
+	//	wrapper.StopContinuous()
+	//}
 
 	return strings.Join(resultText, " "), nil
 }

@@ -176,3 +176,65 @@ func PumpFileContinuously(stop chan int, ready chan struct{}, filename string, w
 		}
 	}
 }
+
+func RecognizeContinuousUsingWrapper(subscription string, region string, file string) {
+	/* If running this in a server, each worker thread should run something similar to this */
+	wrapper, err := NewWrapper(subscription, region)
+	if err != nil {
+		fmt.Println("Got an error: ", err)
+	}
+	defer wrapper.Close()
+	stop := make(chan int)
+
+	go PumpFileContinuously2(stop, file, wrapper)
+	fmt.Println("Starting Continuous...")
+	wrapper.StartContinuous(func(event *SDKWrapperEvent) {
+		defer event.Close()
+		switch event.EventType {
+		case Recognized:
+			fmt.Println("Got a recognized event")
+			fmt.Println("Text: ", event.Recognized.Result.Text)
+		case Recognizing:
+			fmt.Println("Got a recognizing event")
+			fmt.Println("Text: ", event.Recognizing.Result.Text)
+		case Cancellation:
+			fmt.Println("Got a cancellation event")
+		}
+	})
+	<-time.After(10 * time.Second)
+	//stop <- 1
+	fmt.Println("Stopping Continuous...")
+	wrapper.StopContinuous()
+	fmt.Println("Exiting...")
+}
+
+func PumpFileContinuously2(stop chan int, filename string, wrapper *SDKWrapper) {
+	file, err := os.Open(filename)
+	if err != nil {
+		fmt.Println("Error opening file: ", err)
+		return
+	}
+	defer file.Close()
+	reader := bufio.NewReader(file)
+	buffer := make([]byte, 3200)
+	for {
+		select {
+		case <-stop:
+			fmt.Println("Stopping pump...")
+			return
+		case <-time.After(100 * time.Millisecond):
+		}
+		n, err := reader.Read(buffer)
+		if err == io.EOF {
+			return
+		}
+		if err != nil {
+			fmt.Println("Error reading file: ", err)
+			break
+		}
+		err = wrapper.Write(buffer[0:n])
+		if err != nil {
+			fmt.Println("Error writing to the stream")
+		}
+	}
+}
