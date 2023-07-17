@@ -21,7 +21,7 @@ type Config struct {
 }
 
 func NewConfig(endpoint, deploymentName string, opts ...ConfigOpt) (*Config, error) {
-	systemRole := "Assistant is an AI chatbot that helps users turn a natural language description of their pain levels into JSON format. " +
+	systemRole := "Assistant is an AI chatbot that helps users turn a natural language description of their pain levels into valid JSON format. " +
 		"After users inputs a description of their pain levels, location of the pain, optional numbness description and further description of their feelings, it will provide a json representation in the format preceded by ####.\n" +
 		"- If the user does not give a direct 0-10 number for their pain level, the assistant makes an estimate of the level on that range based on the given description.\n" +
 		"- The location field should be an integer mapping to the following chart delmited by ```. If no body part is mentioned directly, try to map the pain from the description to the closest body part in the mapping.\n" +

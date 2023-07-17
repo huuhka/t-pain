@@ -136,7 +136,7 @@ func PrintPainDescriptionJSONFormat() string {
 		sb.WriteString(fmt.Sprintf("\t\"%s\": %s\n", field.Name, fieldValue.Type()))
 	}
 
-	sb.WriteString("{\n")
+	sb.WriteString("}\n")
 
 	return sb.String()
 }
