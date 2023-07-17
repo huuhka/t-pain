@@ -1,4 +1,4 @@
-package dataprocessing
+package openai
 
 import (
 	"fmt"

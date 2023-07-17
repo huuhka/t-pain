@@ -7,16 +7,14 @@ import (
 	"time"
 )
 
-func (wrapper *SDKWrapper) HandleAudioLink(url string) (string, error) {
+func HandleAudioLink(url string, wrapper *SDKWrapper) (string, error) {
 	// Download and convert
 	wavFile, _ := handleAudioFileSetup(url)
 	defer deleteFromDisk(wavFile)
 
 	stop := make(chan int)
 	ready := make(chan struct{})
-	go PumpFileContinuously(stop, ready, wavFile, wrapper)
-
-	//go PumpFileContinuously2(stop, wavFile, wrapper)
+	go PumpFileContinuously(stop, wavFile, wrapper)
 
 	var resultText []string
 
@@ -28,10 +26,9 @@ func (wrapper *SDKWrapper) HandleAudioLink(url string) (string, error) {
 			log.Println("Got a recognized event")
 			resultText = append(resultText, event.Recognized.Result.Text)
 		case Recognizing:
-			log.Println("Got a recognizing event")
-			log.Println(event.Recognizing.Result)
 		case Cancellation:
 			log.Println("Got a cancellation event. Reason: ", event.Cancellation.Reason)
+			close(ready)
 		}
 	})
 
@@ -41,8 +38,6 @@ func (wrapper *SDKWrapper) HandleAudioLink(url string) (string, error) {
 
 	select {
 	case <-ready:
-		log.Println("Ready to stop")
-		<-time.After(15 * time.Second)
 		err := wrapper.StopContinuous()
 		if err != nil {
 			log.Println("Error stopping continuous: ", err)

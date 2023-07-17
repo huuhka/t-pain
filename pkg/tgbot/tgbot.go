@@ -5,14 +5,15 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 	"os"
-	"t-pain/pkg/dataprocessing"
+	"t-pain/pkg/models"
+	"t-pain/pkg/openai"
 	"t-pain/pkg/speechtotext"
 )
 
 type Bot struct {
 	bot          *tgbotapi.BotAPI
-	recognizer   *speechtotext.SDKWrapper
-	openAIClient *dataprocessing.OpenAiClient
+	speechConfig *speechtotext.Config
+	openAIClient *openai.OpenAiClient
 }
 
 func Run() error {
@@ -30,6 +31,9 @@ func Run() error {
 
 	for update := range updates {
 		if update.Message != nil { // If we got a message
+			if _, ok := models.UserIDs[update.Message.From.ID]; !ok {
+				b.reply(update, "You are not authorized to use this bot")
+			}
 			go b.processMessage(update)
 		}
 	}
@@ -59,23 +63,17 @@ func NewBot(botToken string) (*Bot, error) {
 	// SPEECH TO TEXT
 	speechKey := os.Getenv("SPEECH_KEY")
 	speechRegion := os.Getenv("SPEECH_REGION")
-
-	recognizer, err := speechtotext.NewWrapper(speechKey, speechRegion)
-	if err != nil {
-		return nil, err
-	}
-
-	botObj.recognizer = recognizer
+	botObj.speechConfig = speechtotext.NewConfig(speechKey, speechRegion)
 
 	// OPENAI, TODO make this a bit clearer
 	openAIKey := os.Getenv("OPENAI_KEY")
 	openAIEndpoint := os.Getenv("OPENAI_ENDPOINT")
-	openAIModel := os.Getenv("OPENAI_MODEL")
-	config, err := dataprocessing.NewConfig(openAIEndpoint, openAIModel, dataprocessing.WithApiKey(openAIKey))
+	openAiDeployment := os.Getenv("OPENAI_DEPLOYMENT")
+	config, err := openai.NewConfig(openAIEndpoint, openAiDeployment, openai.WithApiKey(openAIKey))
 	if err != nil {
 		return nil, err
 	}
-	openAIClient, err := dataprocessing.NewOpenAiClient(config)
+	openAIClient, err := openai.NewOpenAiClient(config)
 	if err != nil {
 		return nil, err
 	}
@@ -96,21 +94,21 @@ func (b *Bot) processMessage(update tgbotapi.Update) {
 		return
 	}
 
-	processedText, err := b.openAIClient.GetPainDescriptionObject(receivedText)
+	painDesc, err := b.openAIClient.GetPainDescriptionObject(receivedText)
 	if err != nil {
 		log.Printf("Error processing message: %v", err)
-		b.reply(update, "Error processing message. Please contact Pasi")
+		b.reply(update, err.Error())
 		return
 	}
 
 	log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 
-	b.reply(update, processedText)
+	b.reply(update, painDesc.StringFriendly())
 }
 
-func (b Bot) reply(update tgbotapi.Update, replyText string) {
+func (b *Bot) reply(update tgbotapi.Update, replyText string) {
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
-	msg.ReplyToMessageID = update.Message.MessageID
+	//msg.ReplyToMessageID = update.Message.MessageID
 	msg.Text = replyText
 
 	if _, err := b.bot.Send(msg); err != nil {
@@ -118,14 +116,19 @@ func (b Bot) reply(update tgbotapi.Update, replyText string) {
 	}
 }
 
-func (b Bot) processToText(update tgbotapi.Update) (string, error) {
+func (b *Bot) processToText(update tgbotapi.Update) (string, error) {
 	var text string
 	if update.Message.Voice != nil {
 		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Voice.FileID)
 		fileLink, err := b.bot.GetFileDirectURL(update.Message.Voice.FileID)
-		text, err = b.recognizer.HandleAudioLink(fileLink)
+		recognizer, err := speechtotext.NewWrapper(b.speechConfig.Key, b.speechConfig.Region)
 		if err != nil {
-			log.Printf("Error handling audio: %v", err)
+			return "", fmt.Errorf("processToText: recognizer creation: %w", err)
+		}
+		text, err = speechtotext.HandleAudioLink(fileLink, recognizer)
+		if err != nil {
+			log.Printf("processToText: Error handling audio: %v", err)
+			return "", fmt.Errorf("processToText: Error handling audio: %w", err)
 		}
 	} else if update.Message.Text != "" {
 		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)

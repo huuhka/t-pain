@@ -1,4 +1,4 @@
-package dataprocessing
+package openai
 
 // Message is a single message in the OpenAI conversation
 type Message struct {
@@ -27,9 +27,10 @@ type Conversation struct {
 
 // NewConversation creates a new conversation
 func NewConversation(systemMessage Message) *Conversation {
-	return &Conversation{
-		Messages: []Message{},
-	}
+	c := Conversation{}
+	c.Messages = append(c.Messages, systemMessage)
+
+	return &c
 }
 
 // AddMessage adds a message to the conversation from a response

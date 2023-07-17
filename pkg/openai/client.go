@@ -1,4 +1,4 @@
-package dataprocessing
+package openai
 
 import (
 	"bytes"
@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"io"
+	"log"
 	"net/http"
 	"strings"
+	"t-pain/pkg/models"
 	"time"
 )
 
@@ -96,36 +98,46 @@ func (rt ApiKeyRoundTripper) RoundTrip(req *http.Request) (*http.Response, error
 	return rt.Transport.RoundTrip(req)
 }
 
-func (c OpenAiClient) GetPainDescriptionObject(painDescription string) (string, error) {
+func (c OpenAiClient) GetPainDescriptionObject(painDescription string) (models.PainDescription, error) {
 	// create conversation with config.SystemContext and diff
 	painDescMsg := NewUserMessage(painDescription)
 	conversation := NewConversation(c.config.SystemContext)
 	conversation.Messages = append(conversation.Messages, painDescMsg)
 
+	var painDescObj models.PainDescription
+
 	// create request
 	req, cancel, err := c.createRequest(conversation)
 	defer cancel()
 	if err != nil {
-		return "", fmt.Errorf("unable to create request: %w", err)
+		return painDescObj, fmt.Errorf("unable to create request: %w", err)
 	}
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("unable to send request: %w", err)
+		return painDescObj, fmt.Errorf("unable to send request: %w", err)
 	}
 	defer resp.Body.Close()
 	responseBody, err := io.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("request failed with status code %d and body %s", resp.StatusCode, responseBody)
+		return painDescObj, fmt.Errorf("request failed with status code %d and body %s", resp.StatusCode, responseBody)
 	}
 
 	// parse response
 	var parsedResp OpenAiCompletionResponse
 	err = json.Unmarshal(responseBody, &parsedResp)
 	if err != nil {
-		return "", fmt.Errorf("unable to parse response: %w", err)
+		return painDescObj, fmt.Errorf("unable to parse response: %w", err)
 	}
 	split := strings.Split(parsedResp.Choices[0].Message.Content, "####")
-	return split[len(split)-1], nil
+	oaiText := split[len(split)-1]
+	b := []byte(oaiText)
+	err = json.Unmarshal(b, &painDescObj)
+	if err != nil {
+		log.Println("unable to parse to PainDescObject:", err)
+		return painDescObj, fmt.Errorf(oaiText)
+	}
+	painDescObj.TimeStamp = time.Now()
+	return painDescObj, nil
 }
 
 // createRequest creates a request for the OpenAI API
