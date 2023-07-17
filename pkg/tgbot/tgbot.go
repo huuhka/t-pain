@@ -5,12 +5,14 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 	"os"
+	"t-pain/pkg/dataprocessing"
 	"t-pain/pkg/speechtotext"
 )
 
 type Bot struct {
-	bot        *tgbotapi.BotAPI
-	recognizer *speechtotext.SDKWrapper
+	bot          *tgbotapi.BotAPI
+	recognizer   *speechtotext.SDKWrapper
+	openAIClient *dataprocessing.OpenAiClient
 }
 
 func Run() error {
@@ -54,6 +56,7 @@ func NewBot(botToken string) (*Bot, error) {
 
 	botObj.bot = bot
 
+	// SPEECH TO TEXT
 	speechKey := os.Getenv("SPEECH_KEY")
 	speechRegion := os.Getenv("SPEECH_REGION")
 
@@ -64,42 +67,73 @@ func NewBot(botToken string) (*Bot, error) {
 
 	botObj.recognizer = recognizer
 
+	// OPENAI, TODO make this a bit clearer
+	openAIKey := os.Getenv("OPENAI_KEY")
+	openAIEndpoint := os.Getenv("OPENAI_ENDPOINT")
+	openAIModel := os.Getenv("OPENAI_MODEL")
+	config, err := dataprocessing.NewConfig(openAIEndpoint, openAIModel, dataprocessing.WithApiKey(openAIKey))
+	if err != nil {
+		return nil, err
+	}
+	openAIClient, err := dataprocessing.NewOpenAiClient(config)
+	if err != nil {
+		return nil, err
+	}
+	botObj.openAIClient = openAIClient
+
 	return botObj, nil
 }
 
 func (b *Bot) processMessage(update tgbotapi.Update) {
-	messageText := ""
-	msgFormat := ""
-	if update.Message.VideoNote != nil {
-		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.VideoNote.FileID)
-		msgFormat = "video"
-	} else if update.Message.Voice != nil {
-		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Voice.FileID)
-		fileLink, err := b.bot.GetFileDirectURL(update.Message.Voice.FileID)
-		msgFormat, err = b.recognizer.HandleAudioLink(fileLink)
-		if err != nil {
-			log.Printf("Error handling audio link: %v", err)
+	receivedText, err := b.processToText(update)
+	if err != nil {
+		log.Printf("Error processing message: %v", err)
+		if err.Error() == "This bot can only handle text and voice messages" {
+			b.reply(update, "This bot can only handle text and voice messages")
+		} else {
+			b.reply(update, "Error processing message. Please contact Pasi")
 		}
-	} else if update.Message.Text != "" {
-		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
-		msgFormat = "text"
-	} else {
-		messageText = fmt.Sprintf("This bot can only handle text, voice and videoNote messages.")
+		return
 	}
 
-	if messageText == "" {
-		messageText = fmt.Sprintf("You sent me a %s", msgFormat)
+	processedText, err := b.openAIClient.GetPainDescriptionObject(receivedText)
+	if err != nil {
+		log.Printf("Error processing message: %v", err)
+		b.reply(update, "Error processing message. Please contact Pasi")
+		return
 	}
 
 	log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 
+	b.reply(update, processedText)
+}
+
+func (b Bot) reply(update tgbotapi.Update, replyText string) {
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
 	msg.ReplyToMessageID = update.Message.MessageID
-	msg.Text = messageText
+	msg.Text = replyText
 
 	if _, err := b.bot.Send(msg); err != nil {
 		log.Printf("Error sending message: %v", err)
 	}
+}
+
+func (b Bot) processToText(update tgbotapi.Update) (string, error) {
+	var text string
+	if update.Message.Voice != nil {
+		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Voice.FileID)
+		fileLink, err := b.bot.GetFileDirectURL(update.Message.Voice.FileID)
+		text, err = b.recognizer.HandleAudioLink(fileLink)
+		if err != nil {
+			log.Printf("Error handling audio: %v", err)
+		}
+	} else if update.Message.Text != "" {
+		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
+		text = update.Message.Text
+	} else {
+		return "This bot can only handle text and voice messages", fmt.Errorf("this bot can only handle text and voice messages")
+	}
+	return text, nil
 }
 
 func getBotToken() (string, error) {
