@@ -34,6 +34,7 @@ func Run() error {
 			if _, ok := models.UserIDs[update.Message.From.ID]; !ok {
 				log.Printf("Unauthorized user tried to use the bot: %v", update.Message.From)
 				b.reply(update, "You are not authorized to use this bot")
+				continue
 			}
 			go b.processMessage(update)
 		}
