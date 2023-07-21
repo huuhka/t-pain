@@ -74,7 +74,10 @@ func main() {
 		panic(err)
 	}
 
-	//SavePainDescriptionsToFile(data, "paindescriptions.json")
+	//err := SavePainDescriptionsToFile(data, "paindescriptions.json")
+	//if err != nil {
+	//	panic(err)
+	//}
 }
 
 func SavePainDescriptionsToFile(data []models.PainDescriptionLogEntry, filename string) error {

@@ -119,6 +119,8 @@ func (p *PainDescription) UnmarshalJSON(data []byte) error {
 }
 
 func (p *PainDescription) MapToLogEntry() PainDescriptionLogEntry {
+	p.Timestamp = p.Timestamp.UTC()
+
 	pdLog := PainDescriptionLogEntry{
 		PainDescription: *p,
 		LocationName:    BodyPartMapping[p.LocationId],
@@ -177,15 +179,4 @@ type PainDescriptionLogEntry struct {
 	PainDescription
 	LocationName string `json:"locationName"`
 	SideName     string `json:"sideName"`
-}
-
-func (p PainDescriptionLogEntry) MarshalJSON() ([]byte, error) {
-	type Alias PainDescriptionLogEntry
-	return json.Marshal(&struct {
-		TimeGenerated time.Time `json:"TimeGenerated"`
-		*Alias
-	}{
-		TimeGenerated: p.Timestamp,
-		Alias:         (*Alias)(&p),
-	})
 }
