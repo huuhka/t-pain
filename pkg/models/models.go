@@ -43,32 +43,33 @@ var BodyPartMapping = BodyParts{
 	10: "Right Wrist",
 	11: "Left Hand",
 	12: "Right Hand",
-	13: "Back",
-	14: "Hip",
-	15: "Left Leg",
-	16: "Right Leg",
-	17: "Left Knee",
-	18: "Right Knee",
-	19: "Left Ankle",
-	20: "Right Ankle",
-	21: "Left Foot",
-	22: "Right Foot",
-	23: "Chest",
-	24: "Abdomen",
-	25: "Pelvis",
-	26: "Genitals",
-	27: "Left Thigh",
-	28: "Right Thigh",
-	29: "Left Calf",
-	30: "Right Calf",
-	31: "Left Toes",
-	32: "Right Toes",
+	13: "Upper Back",
+	14: "Lower Back",
+	15: "Hip",
+	16: "Left Leg",
+	17: "Right Leg",
+	18: "Left Knee",
+	19: "Right Knee",
+	20: "Left Ankle",
+	21: "Right Ankle",
+	22: "Left Foot",
+	23: "Right Foot",
+	24: "Chest",
+	25: "Abdomen",
+	26: "Pelvis",
+	27: "Genitals",
+	28: "Left Thigh",
+	29: "Right Thigh",
+	30: "Left Calf",
+	31: "Right Calf",
+	32: "Left Toes",
+	33: "Right Toes",
 }
 
 type PainDescription struct {
-	TimeStamp           time.Time `json:"timestamp,omitempty"`
-	Level               []int     `json:"level"`
-	Location            []int     `json:"location"`
+	Timestamp           time.Time `json:"timestamp,omitempty"`
+	Level               int       `json:"level"`
+	LocationId          int       `json:"location"`
 	Description         string    `json:"description"`
 	Numbness            bool      `json:"numbness"`
 	NumbnessDescription string    `json:"numbnessDescription,omitempty"`
@@ -76,14 +77,14 @@ type PainDescription struct {
 
 func NewPainDescription() PainDescription {
 	return PainDescription{
-		TimeStamp: time.Now(),
+		Timestamp: time.Now(),
 	}
 }
 
 func (p *PainDescription) UnmarshalJSON(data []byte) error {
 	type Alias PainDescription
 	aux := &struct {
-		TimeStamp json.RawMessage `json:"timestamp,omitempty"`
+		Timestamp json.RawMessage `json:"timestamp,omitempty"`
 		*Alias
 	}{
 		Alias: (*Alias)(p),
@@ -93,28 +94,11 @@ func (p *PainDescription) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	if len(aux.TimeStamp) > 0 {
-		return json.Unmarshal(aux.TimeStamp, &p.TimeStamp)
+	if len(aux.Timestamp) > 0 {
+		return json.Unmarshal(aux.Timestamp, &p.Timestamp)
 	}
 
 	return nil
-}
-
-func (p *PainDescription) StringFriendly() string {
-	var result strings.Builder
-
-	loc, _ := time.LoadLocation("Europe/Helsinki")
-	tstamp := p.TimeStamp.Round(time.Minute).In(loc).Format("02-01-2006 15:04")
-
-	result.WriteString(fmt.Sprintf("Timestamp: %s\n", tstamp))
-	result.WriteString("Pains:\n")
-	for i := range p.Level {
-		result.WriteString(fmt.Sprintf("\t- Location: %s, Level: %d\n", BodyPartMapping[p.Location[i]], p.Level[i]))
-	}
-	result.WriteString(fmt.Sprintf("Description: %s\n", p.Description))
-	result.WriteString(fmt.Sprintf("Numbness: %t\n", p.Numbness))
-	result.WriteString(fmt.Sprintf("Numbness Description: %s\n", p.NumbnessDescription))
-	return result.String()
 }
 
 func PrintPainDescriptionJSONFormat() string {
@@ -139,4 +123,20 @@ func PrintPainDescriptionJSONFormat() string {
 	sb.WriteString("}\n")
 
 	return sb.String()
+}
+
+type PainDescriptionLogEntry struct {
+	PainDescription
+	LocationName string `json:"locationName"`
+}
+
+func (p PainDescriptionLogEntry) MarshalJSON() ([]byte, error) {
+	type Alias PainDescriptionLogEntry
+	return json.Marshal(&struct {
+		TimeGenerated time.Time `json:"TimeGenerated"`
+		*Alias
+	}{
+		TimeGenerated: p.Timestamp,
+		Alias:         (*Alias)(&p),
+	})
 }

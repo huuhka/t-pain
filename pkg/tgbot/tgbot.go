@@ -5,9 +5,11 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 	"os"
+	"strings"
 	"t-pain/pkg/models"
 	"t-pain/pkg/openai"
 	"t-pain/pkg/speechtotext"
+	"time"
 )
 
 type Bot struct {
@@ -105,7 +107,7 @@ func (b *Bot) processMessage(update tgbotapi.Update) {
 
 	log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 
-	b.reply(update, painDesc.StringFriendly())
+	b.reply(update, fmtReply(painDesc))
 }
 
 func (b *Bot) reply(update tgbotapi.Update, replyText string) {
@@ -147,4 +149,26 @@ func getBotToken() (string, error) {
 		return "", fmt.Errorf("unable to get bot token, BOT_TOKEN env variable is empty")
 	}
 	return botToken, nil
+}
+
+func fmtReply(pd []models.PainDescription) string {
+	var result strings.Builder
+	if len(pd) == 0 {
+		return ""
+	}
+
+	first := pd[0]
+
+	loc, _ := time.LoadLocation("Europe/Helsinki")
+	tstamp := first.Timestamp.Round(time.Minute).In(loc).Format("02-01-2006 15:04")
+
+	result.WriteString(fmt.Sprintf("Timestamp: %s\n", tstamp))
+	result.WriteString("Pains:\n")
+	for _, pain := range pd {
+		result.WriteString(fmt.Sprintf("\t- Location: %s, Level: %d\n", models.BodyPartMapping[pain.LocationId], pain.Level))
+	}
+	result.WriteString(fmt.Sprintf("Description: %s\n", first.Description))
+	result.WriteString(fmt.Sprintf("Numbness: %t\n", first.Numbness))
+	result.WriteString(fmt.Sprintf("Numbness Description: %s\n", first.NumbnessDescription))
+	return result.String()
 }

@@ -98,13 +98,13 @@ func (rt ApiKeyRoundTripper) RoundTrip(req *http.Request) (*http.Response, error
 	return rt.Transport.RoundTrip(req)
 }
 
-func (c OpenAiClient) GetPainDescriptionObject(painDescription string) (models.PainDescription, error) {
+func (c OpenAiClient) GetPainDescriptionObject(painDescription string) ([]models.PainDescription, error) {
 	// create conversation with config.SystemContext and diff
 	painDescMsg := NewUserMessage(painDescription)
 	conversation := NewConversation(c.config.SystemContext)
 	conversation.Messages = append(conversation.Messages, painDescMsg)
 
-	var painDescObj models.PainDescription
+	var painDescObj []models.PainDescription
 
 	// create request
 	req, cancel, err := c.createRequest(conversation)
@@ -131,12 +131,16 @@ func (c OpenAiClient) GetPainDescriptionObject(painDescription string) (models.P
 	split := strings.Split(parsedResp.Choices[0].Message.Content, "####")
 	oaiText := split[len(split)-1]
 	b := []byte(oaiText)
+
 	err = json.Unmarshal(b, &painDescObj)
 	if err != nil {
 		log.Println("unable to parse to PainDescObject:", err)
 		return painDescObj, fmt.Errorf(oaiText)
 	}
-	painDescObj.TimeStamp = time.Now()
+	for i := range painDescObj {
+		now := time.Now()
+		painDescObj[i].Timestamp = now
+	}
 	return painDescObj, nil
 }
 
