@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"t-pain/pkg/database"
 	"t-pain/pkg/models"
 	"t-pain/pkg/openai"
 	"t-pain/pkg/speechtotext"
@@ -13,9 +14,10 @@ import (
 )
 
 type Bot struct {
-	bot          *tgbotapi.BotAPI
-	speechConfig *speechtotext.Config
-	openAIClient *openai.OpenAiClient
+	bot                *tgbotapi.BotAPI
+	speechConfig       *speechtotext.Config
+	openAIClient       *openai.OpenAiClient
+	logAnalyticsClient *database.LogAnalyticsClient
 }
 
 func Run() error {
@@ -83,6 +85,16 @@ func NewBot(botToken string) (*Bot, error) {
 	}
 	botObj.openAIClient = openAIClient
 
+	// DATA SAVING
+	dcEndpoint := os.Getenv("DATA_COLLECTION_ENDPOINT")
+	dcRuleId := os.Getenv("DATA_COLLECTION_RULE_ID")
+	dcStreamName := os.Getenv("DATA_COLLECTION_STREAM_NAME")
+	dcClient, err := database.NewLogAnalyticsClient(dcEndpoint, dcRuleId, dcStreamName)
+	if err != nil {
+		return nil, err
+	}
+	botObj.logAnalyticsClient = dcClient
+
 	return botObj, nil
 }
 
@@ -102,6 +114,13 @@ func (b *Bot) processMessage(update tgbotapi.Update) {
 	if err != nil {
 		log.Printf("Error processing message: %v", err)
 		b.reply(update, err.Error())
+		return
+	}
+
+	err = b.saveDataToLogAnalytics(painDesc)
+	if err != nil {
+		log.Printf("Error saving data to log analytics: %v", err)
+		b.reply(update, "Error saving data. Please contact Pasi and try again later.")
 		return
 	}
 
@@ -141,6 +160,18 @@ func (b *Bot) processToText(update tgbotapi.Update) (string, error) {
 		return "This bot can only handle text and voice messages", fmt.Errorf("this bot can only handle text and voice messages")
 	}
 	return text, nil
+}
+
+func (b *Bot) saveDataToLogAnalytics(pd []models.PainDescription) error {
+	var data []models.PainDescriptionLogEntry
+	for _, pain := range pd {
+		data = append(data, pain.MapToLogEntry())
+	}
+	err := b.logAnalyticsClient.SavePainDescriptionsToLogAnalytics(data)
+	if err != nil {
+		return fmt.Errorf("saveDataToLogAnalytics: %w", err)
+	}
+	return nil
 }
 
 func getBotToken() (string, error) {
