@@ -101,13 +101,13 @@ func (rt ApiKeyRoundTripper) RoundTrip(req *http.Request) (*http.Response, error
 func (c OpenAiClient) GetPainDescriptionObject(painDescription string) ([]models.PainDescription, error) {
 	// create conversation with config.SystemContext and diff
 	painDescMsg := NewUserMessage(painDescription)
-	conversation := NewConversation(c.config.SystemContext)
+	conversation := c.config.SystemContext
 	conversation.Messages = append(conversation.Messages, painDescMsg)
 
 	var painDescObj []models.PainDescription
 
 	// create request
-	req, cancel, err := c.createRequest(conversation)
+	req, cancel, err := c.createRequest(&conversation)
 	defer cancel()
 	if err != nil {
 		return painDescObj, fmt.Errorf("unable to create request: %w", err)

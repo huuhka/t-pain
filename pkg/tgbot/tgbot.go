@@ -165,7 +165,7 @@ func fmtReply(pd []models.PainDescription) string {
 	result.WriteString(fmt.Sprintf("Timestamp: %s\n", tstamp))
 	result.WriteString("Pains:\n")
 	for _, pain := range pd {
-		result.WriteString(fmt.Sprintf("\t- Location: %s, Level: %d\n", models.BodyPartMapping[pain.LocationId], pain.Level))
+		result.WriteString(fmt.Sprintf("\t- Location: %s, Side: %s, Level: %d\n", models.BodyPartMapping[pain.LocationId], models.SideMap[pain.SideId], pain.Level))
 	}
 	result.WriteString(fmt.Sprintf("Description: %s\n", first.Description))
 	result.WriteString(fmt.Sprintf("Numbness: %t\n", first.Numbness))

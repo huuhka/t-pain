@@ -26,9 +26,13 @@ type Conversation struct {
 }
 
 // NewConversation creates a new conversation
-func NewConversation(systemMessage Message) *Conversation {
+func NewConversation(systemMessage Message, examples ...Message) *Conversation {
 	c := Conversation{}
 	c.Messages = append(c.Messages, systemMessage)
+
+	for _, example := range examples {
+		c.Messages = append(c.Messages, example)
+	}
 
 	return &c
 }

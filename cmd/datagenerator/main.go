@@ -20,20 +20,23 @@ func main() {
 		date := time.Now().AddDate(0, 0, -i)
 
 		// Generate 1-2 pain descriptions per day
-		numDescriptions := r.Intn(len(models.BodyPartMapping)) + 1
+		numDescriptions := r.Intn(2) + 1
 
 		for j := 0; j < numDescriptions; j++ {
 			// Generate random level of pain between 1 and 10
 			level := r.Intn(10) + 1
 
 			// Generate random location of pain
-			location := r.Intn(32) + 1
+			location := r.Intn(len(models.BodyPartMapping)) + 1
 
 			// Generate random description
 			description := "Pain in " + models.BodyPartMapping[location]
 
 			// Generate random numbness
 			numbness := r.Intn(2) == 1
+
+			// Generate random side
+			side := r.Intn(len(models.SideMap)) + 1
 
 			// Generate numbness description
 			numbnessDescription := ""
@@ -46,15 +49,13 @@ func main() {
 				Timestamp:           date,
 				Level:               level,
 				LocationId:          location,
+				SideId:              side,
 				Description:         description,
 				Numbness:            numbness,
 				NumbnessDescription: numbnessDescription,
 			}
 
-			pdLog := models.PainDescriptionLogEntry{
-				PainDescription: painDescription,
-				LocationName:    models.BodyPartMapping[location],
-			}
+			pdLog := painDescription.MapToLogEntry()
 
 			data = append(data, pdLog)
 		}

@@ -16,29 +16,89 @@ func CreateUrl(endpoint, deploymentName string) string {
 type Config struct {
 	Url             string
 	ApiKey          string
-	SystemContext   Message
+	SystemContext   Conversation
 	AzureCredential *azidentity.DefaultAzureCredential
 }
 
 func NewConfig(endpoint, deploymentName string, opts ...ConfigOpt) (*Config, error) {
 	systemRole := "Assistant is an AI chatbot that helps users turn a natural language description of their pain levels into valid JSON format. " +
 		"After users inputs a description of their pain levels, location of the pain, optional numbness description and further description of their feelings, it will provide a json array representation in the format preceded by ####.\n" +
-		"- If the user does not give a direct 0-10 number for their pain level, the assistant makes an estimate of the level on that range based on the given description.\n" +
-		"- The location field should be an integer mapping to the following chart delmited by ```. If no body part is mentioned directly, try to map the pain from the description to the closest body part in the mapping.\n" +
+		"- If the user does not give a direct 0-10 number for their pain level, the assistant makes an estimate of the level on that range based on the given description. The numbers should always be full integers rounded up.\n" +
+		"- The location and side fields should be an integer mapping to the following chart= delmited by ```. If no body part is mentioned directly, try to map the pain from the description to the closest body part in the mapping. If no side is mentioned, set the value to both.\n" +
 		"- The assistant's response should always include \"####\" before the JSON array representation and SHOULD NOT include any other text\n" +
-		"- The description might have multiple pain areas, they should be considered in the json by adding a new object in the result array." +
+		"- The description might have multiple pain areas, they should be considered in the json by adding a new object in the result array. However, if both pain areas would map to the same location, only add that location once." +
 		"- Do not mention anything about the JSON format to the user" +
 		"- If the user writes in Finnish, respond to them in Finnish. Do not modify the names of the properties in the JSON object in any situation" +
-		"- If the user mentions pain radiating to other locations, add those locations to the response along with respective pain levels" +
+		"- If the user mentions pain radiating to other locations, add those locations to the response along with respective pain levels. Include full description on all entries.\n" +
+		"Body Parts:\n" +
 		fmt.Sprintf("%v", models.BodyPartMapping.StringNameFirst()) +
+		"Sides:\n" +
+		fmt.Sprintf("%v", models.SideMap.StringNameFirst()) +
 		"JSON Format:\n" +
-		"[" +
+		"[\n" +
 		fmt.Sprintf(models.PrintPainDescriptionJSONFormat()) +
-		"]"
+		"]\n"
+
+	examples := []Message{
+		{
+			Content: "My left arm is quite painful today. About level 5. The pain is radiating to my left shoulder also",
+			Role:    "user",
+		},
+		{
+			Content: "####\n" +
+				"[\n" +
+				models.PrintSinglePainDescriptionJSONFormat(models.PainDescription{
+					Level:               5,
+					LocationId:          4,
+					SideId:              2,
+					Description:         "My left arm is quite painful today. About level 5. The pain is radiating to my left shoulder also",
+					Numbness:            false,
+					NumbnessDescription: "",
+				}) + ",\n" +
+				models.PrintSinglePainDescriptionJSONFormat(models.PainDescription{
+					Level:               5,
+					LocationId:          3,
+					SideId:              2,
+					Description:         "My left arm is quite painful today. About level 5. The pain is radiating to my left shoulder also",
+					Numbness:            false,
+					NumbnessDescription: "",
+				}) + "\n" +
+				"]\n",
+			Role: "assistant",
+		},
+		{
+			Content: "Pitkät selkälihakset vähän krampissa. Alaselkä aika perustasoa lääkkeiden oton jälkeen. Tippu ehkä seiska puolikkaasta kutoseen. Istuessa.",
+			Role:    "user",
+		},
+		{
+			Content: "####\n" +
+				"[\n" +
+				models.PrintSinglePainDescriptionJSONFormat(models.PainDescription{
+					Level:               7,
+					LocationId:          8,
+					SideId:              1,
+					Description:         "Pitkät selkälihakset vähän krampissa. Alaselkä aika perustasoa lääkkeiden oton jälkeen. Tippu ehkä seiska puolikkaasta kutoseen. Istuessa.",
+					Numbness:            false,
+					NumbnessDescription: "",
+				}) + ",\n" +
+				models.PrintSinglePainDescriptionJSONFormat(models.PainDescription{
+					Level:               7,
+					LocationId:          9,
+					SideId:              1,
+					Description:         "Pitkät selkälihakset vähän krampissa. Alaselkä aika perustasoa lääkkeiden oton jälkeen. Tippu ehkä seiska puolikkaasta kutoseen. Istuessa.",
+					Numbness:            false,
+					NumbnessDescription: "",
+				}) + "\n" +
+				"]\n",
+			Role: "assistant",
+		},
+	}
+
+	sc := NewConversation(NewSystemMessage(systemRole), examples...)
 
 	c := Config{
 		Url:           CreateUrl(endpoint, deploymentName),
-		SystemContext: NewSystemMessage(systemRole),
+		SystemContext: *sc,
 	}
 
 	for _, opt := range opts {

@@ -24,4 +24,4 @@ go.work
 .idea/
 
 # MacOs
-.DS_Store
+**/.DS_Store
