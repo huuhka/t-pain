@@ -53,9 +53,18 @@ RUN apt-get update && apt-get install -y ca-certificates libasound2 ffmpeg && rm
 # Copy the Speech SDK lib from the build stage
 COPY --from=build /usr/local/speechsdk/lib/x64 /usr/local/speechsdk/lib/x64
 
+# Download, build and install OpenSSL
+RUN wget -O - https://www.openssl.org/source/old/1.1.1/openssl-1.1.1t.tar.gz | tar zxf - \
+    && cd openssl-1.1.1t \
+    && ./config --prefix=/usr/local \
+    && make -j $(nproc) \
+    && make install_sw install_ssldirs \
+    && ldconfig -v
+
 # Set the CGO environment variables
 ENV SPEECHSDK_ROOT="/usr/local/speechsdk"
-ENV LD_LIBRARY_PATH="$SPEECHSDK_ROOT/lib/x64:$LD_LIBRARY_PATH"
+ENV SSL_CERT_DIR="/etc/ssl/certs"
+ENV LD_LIBRARY_PATH="$SPEECHSDK_ROOT/lib/x64:/usr/local/lib:$LD_LIBRARY_PATH"
 
 # Set the current working directory inside the container
 WORKDIR /app
