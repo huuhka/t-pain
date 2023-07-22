@@ -11,6 +11,7 @@ import (
 	"t-pain/pkg/openai"
 	"t-pain/pkg/speechtotext"
 	"time"
+	_ "time/tzdata"
 )
 
 type Bot struct {
