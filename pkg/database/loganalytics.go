@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/monitor/azingest"
+	"os"
 	"t-pain/pkg/models"
 )
 
@@ -16,9 +18,9 @@ type LogAnalyticsClient struct {
 }
 
 func NewLogAnalyticsClient(endpoint, ruleId, streamName string) (*LogAnalyticsClient, error) {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	cred, err := getCredential()
 	if err != nil {
-		return nil, fmt.Errorf("unable to get default credential: %w", err)
+		return nil, fmt.Errorf("unable to get credential: %w", err)
 	}
 
 	client, err := azingest.NewClient(endpoint, cred, nil)
@@ -31,6 +33,28 @@ func NewLogAnalyticsClient(endpoint, ruleId, streamName string) (*LogAnalyticsCl
 		ruleId:     ruleId,
 		streamName: streamName,
 	}, nil
+}
+
+func getCredential() (azcore.TokenCredential, error) {
+	var cred azcore.TokenCredential
+	var err error
+
+	userAssignedId := os.Getenv("AZURE_CLIENT_ID")
+	if userAssignedId != "" {
+		cred, err = azidentity.NewManagedIdentityCredential(&azidentity.ManagedIdentityCredentialOptions{
+			ID: azidentity.ClientID(userAssignedId),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("unable to get managed identity credential: %w", err)
+		}
+	} else {
+		cred, err = azidentity.NewDefaultAzureCredential(nil)
+		if err != nil {
+			return nil, fmt.Errorf("unable to get default credential: %w", err)
+		}
+	}
+	return cred, nil
+
 }
 
 func (lac *LogAnalyticsClient) SavePainDescriptionsToLogAnalytics(pd []models.PainDescriptionLogEntry) error {

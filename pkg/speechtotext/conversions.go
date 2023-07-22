@@ -34,6 +34,8 @@ func handleAudioFileSetup(url string) (string, error) {
 		return "", err
 	}
 
+	log.Println("handleAudioFileSetup: Converted file to wav at " + wavFileName)
+
 	return wavFileName, nil
 }
 
