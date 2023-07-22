@@ -29,6 +29,9 @@ func HandleAudioLink(url string, wrapper *SDKWrapper) (string, error) {
 		case Cancellation:
 			log.Println("Got a cancellation event. Reason: ", event.Cancellation.Reason)
 			close(ready)
+			if event.Cancellation.Reason.String() == "Error" {
+				log.Println("ErrorCode:" + event.Cancellation.ErrorCode.String() + " ErrorDetails: " + event.Cancellation.ErrorDetails)
+			}
 		}
 	})
 
