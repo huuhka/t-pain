@@ -190,7 +190,11 @@ func fmtReply(pd []models.PainDescription) string {
 
 	first := pd[0]
 
-	loc, _ := time.LoadLocation("Europe/Helsinki")
+	loc, err := time.LoadLocation("Europe/Helsinki")
+	if err != nil {
+		log.Printf("Error loading location: %v", err)
+		return "Error generating reply from description. Your data has been saved. Please contact Pasi"
+	}
 	tstamp := first.Timestamp.Round(time.Minute).In(loc).Format("02-01-2006 15:04")
 
 	result.WriteString(fmt.Sprintf("Timestamp: %s\n", tstamp))
