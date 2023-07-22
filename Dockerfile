@@ -48,7 +48,7 @@ RUN go build -o main ./cmd/t-pain/main.go
 FROM ubuntu:22.04
 
 # Install required packages for running the application
-RUN apt-get update && apt-get install -y ca-certificates libasound2 ffmpeg && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ca-certificates libasound2 ffmpeg wget tar make gcc && rm -rf /var/lib/apt/lists/*
 
 # Copy the Speech SDK lib from the build stage
 COPY --from=build /usr/local/speechsdk/lib/x64 /usr/local/speechsdk/lib/x64
