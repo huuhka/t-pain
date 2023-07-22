@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -22,13 +23,18 @@ func handleAudioFileSetup(url string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	log.Println("handleAudioFileSetup: Downloaded file to disk")
 	defer deleteFromDisk(oggFileName)
 
 	// Convert file to wav
 	wavFileName := fmt.Sprintf("%s.wav", newGuid.String())
 	err = convertOggToWav(fmt.Sprintf("%s.ogg", newGuid.String()), wavFileName)
+	if err != nil {
+		log.Println("handleAudioFileSetup: Error converting file to wav: ", err)
+		return "", err
+	}
 
-	return wavFileName, err
+	return wavFileName, nil
 }
 
 // convertOggToWav converts an Ogg audio file to a WAV file using FFmpeg.

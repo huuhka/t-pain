@@ -49,5 +49,9 @@ func HandleAudioLink(url string, wrapper *SDKWrapper) (string, error) {
 	}
 	defer wrapper.StopContinuous()
 
+	if len(resultText) == 0 {
+		return "", fmt.Errorf("only got empty results")
+	}
+
 	return strings.Join(resultText, " "), nil
 }
