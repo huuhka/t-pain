@@ -3,7 +3,7 @@ FROM ubuntu:22.04 AS build
 
 # Update system and install required packages
 RUN apt-get update && \
-    apt-get install -y build-essential libssl-dev ca-certificates libasound2 wget curl git
+    apt-get install -y build-essential libssl-dev ca-certificates libasound2 wget curl git ffmpeg
 
 # Set the environment variable for the Speech SDK location
 ENV SPEECHSDK_ROOT="/usr/local/speechsdk"
