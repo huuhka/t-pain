@@ -54,6 +54,7 @@ RUN apt-get update && apt-get install -y ca-certificates libasound2 ffmpeg wget 
 COPY --from=build /usr/local/speechsdk/lib/x64 /usr/local/speechsdk/lib/x64
 
 # Download, build and install OpenSSL
+# See https://learn.microsoft.com/en-us/azure/ai-services/speech-service/quickstarts/setup-platform?pivots=programming-language-go&tabs=windows,ubuntu,dotnetcli,dotnet,jre,maven,browser,mac,pypi#platform-requirements
 RUN wget -O - https://www.openssl.org/source/old/1.1.1/openssl-1.1.1t.tar.gz | tar zxf - \
     && cd openssl-1.1.1t \
     && ./config --prefix=/usr/local \
