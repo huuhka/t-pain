@@ -59,7 +59,7 @@ RUN wget -O - https://www.openssl.org/source/old/1.1.1/openssl-1.1.1t.tar.gz | t
     && ./config --prefix=/usr/local \
     && make -j $(nproc) \
     && make install_sw install_ssldirs \
-    && ldconfig -v \
+    && ldconfig -v
 
 ENV SSL_CERT_DIR="/etc/ssl/certs"
 
