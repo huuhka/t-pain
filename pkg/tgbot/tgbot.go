@@ -4,7 +4,6 @@ import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
-	"os"
 	"strings"
 	"t-pain/pkg/database"
 	"t-pain/pkg/models"
@@ -21,13 +20,8 @@ type Bot struct {
 	logAnalyticsClient *database.LogAnalyticsClient
 }
 
-func Run() error {
-	botToken, err := getBotToken()
-	if err != nil {
-		return err
-	}
-
-	b, err := NewBot(botToken)
+func Run(c *Config) error {
+	b, err := NewBot(c)
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
@@ -48,11 +42,11 @@ func Run() error {
 	return err
 }
 
-func NewBot(botToken string) (*Bot, error) {
+func NewBot(c *Config) (*Bot, error) {
 
 	botObj := &Bot{}
 
-	bot, err := tgbotapi.NewBotAPI(botToken)
+	bot, err := tgbotapi.NewBotAPI(c.BotToken)
 	if err != nil {
 		return nil, err
 	}
@@ -68,29 +62,21 @@ func NewBot(botToken string) (*Bot, error) {
 	botObj.bot = bot
 
 	// SPEECH TO TEXT
-	speechKey := os.Getenv("SPEECH_KEY")
-	speechRegion := os.Getenv("SPEECH_REGION")
-	botObj.speechConfig = speechtotext.NewConfig(speechKey, speechRegion)
+	botObj.speechConfig = speechtotext.NewConfig(c.SpeechKey, c.SpeechRegion)
 
-	// OPENAI, TODO make this a bit clearer
-	openAIKey := os.Getenv("OPENAI_KEY")
-	openAIEndpoint := os.Getenv("OPENAI_ENDPOINT")
-	openAiDeployment := os.Getenv("OPENAI_DEPLOYMENT")
-	config, err := openai.NewConfig(openAIEndpoint, openAiDeployment, openai.WithApiKey(openAIKey))
+	// OPENAI
+	oaiConf, err := openai.NewConfig(c.openAiEndpoint, c.openAiDeploymentName, openai.WithApiKey(c.openAiKey))
 	if err != nil {
 		return nil, err
 	}
-	openAIClient, err := openai.NewOpenAiClient(config)
+	openAIClient, err := openai.NewOpenAiClient(oaiConf)
 	if err != nil {
 		return nil, err
 	}
 	botObj.openAIClient = openAIClient
 
 	// DATA SAVING
-	dcEndpoint := os.Getenv("DATA_COLLECTION_ENDPOINT")
-	dcRuleId := os.Getenv("DATA_COLLECTION_RULE_ID")
-	dcStreamName := os.Getenv("DATA_COLLECTION_STREAM_NAME")
-	dcClient, err := database.NewLogAnalyticsClient(dcEndpoint, dcRuleId, dcStreamName)
+	dcClient, err := database.NewLogAnalyticsClient(c.dataCollectionEndpoint, c.dataCollectionRuleId, c.dataCollectionStreamName)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +104,7 @@ func (b *Bot) processMessage(update tgbotapi.Update) {
 		return
 	}
 
-	err = b.saveDataToLogAnalytics(painDesc)
+	err = b.saveDataToLogAnalytics(update.Message.From.ID, painDesc)
 	if err != nil {
 		log.Printf("Error saving data to log analytics: %v", err)
 		b.reply(update, "Error saving data. Please contact Pasi and try again later.")
@@ -163,24 +149,16 @@ func (b *Bot) processToText(update tgbotapi.Update) (string, error) {
 	return text, nil
 }
 
-func (b *Bot) saveDataToLogAnalytics(pd []models.PainDescription) error {
+func (b *Bot) saveDataToLogAnalytics(userId int64, pd []models.PainDescription) error {
 	var data []models.PainDescriptionLogEntry
 	for _, pain := range pd {
-		data = append(data, pain.MapToLogEntry())
+		data = append(data, pain.MapToLogEntry(userId))
 	}
 	err := b.logAnalyticsClient.SavePainDescriptionsToLogAnalytics(data)
 	if err != nil {
 		return fmt.Errorf("saveDataToLogAnalytics: %w", err)
 	}
 	return nil
-}
-
-func getBotToken() (string, error) {
-	botToken := os.Getenv("BOT_TOKEN")
-	if botToken == "" {
-		return "", fmt.Errorf("unable to get bot token, BOT_TOKEN env variable is empty")
-	}
-	return botToken, nil
 }
 
 func fmtReply(pd []models.PainDescription) string {

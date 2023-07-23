@@ -118,13 +118,14 @@ func (p *PainDescription) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (p *PainDescription) MapToLogEntry() PainDescriptionLogEntry {
+func (p *PainDescription) MapToLogEntry(userId int64) PainDescriptionLogEntry {
 	p.Timestamp = p.Timestamp.UTC()
 
 	pdLog := PainDescriptionLogEntry{
 		PainDescription: *p,
 		LocationName:    BodyPartMapping[p.LocationId],
 		SideName:        SideMap[p.SideId],
+		UserName:        UserIDs[userId],
 	}
 
 	return pdLog
@@ -179,4 +180,5 @@ type PainDescriptionLogEntry struct {
 	PainDescription
 	LocationName string `json:"locationName"`
 	SideName     string `json:"sideName"`
+	UserName     string `json:"userName"`
 }
