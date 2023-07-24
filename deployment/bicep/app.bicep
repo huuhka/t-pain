@@ -14,12 +14,16 @@ param openAiSecretUris object
 param dataCollectionSecretUris object
 param telegramSecretUris object
 
-param logAnalyticsCustomerId string
+param logAnalyticsName string
 
 param registryResourceId string
 
 var registryName = split(registryResourceId, '/')[8]
 var registryRg = split(registryResourceId, '/')[4]
+
+resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2022-10-01' existing = {
+  name: logAnalyticsName
+}
 
 resource environment 'Microsoft.App/managedEnvironments@2023-04-01-preview' = {
   name: containerAppEnvName
@@ -28,7 +32,8 @@ resource environment 'Microsoft.App/managedEnvironments@2023-04-01-preview' = {
     appLogsConfiguration: {
       destination: 'log-analytics'
       logAnalyticsConfiguration: {
-        customerId: logAnalyticsCustomerId
+        customerId: logAnalytics.properties.customerId
+        sharedKey: logAnalytics.listKeys().primarySharedKey
       }
     }
   }
@@ -49,9 +54,9 @@ resource app 'Microsoft.App/containerApps@2023-04-01-preview' = {
     }
   }
   properties: {
-    managedEnvironmentId: environment.id
     environmentId: environment.id
     configuration: {
+      activeRevisionsMode: 'Single'
       secrets: [
         {
           name: 'bot-token'
@@ -107,6 +112,10 @@ resource app 'Microsoft.App/containerApps@2023-04-01-preview' = {
       ]
     }
     template: {
+      scale: {
+        maxReplicas: 1
+        minReplicas: 1
+      }
       containers: [
         {
           name: containerAppName

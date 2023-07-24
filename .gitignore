@@ -25,3 +25,6 @@ go.work
 
 # MacOs
 **/.DS_Store
+
+# Dev
+.development

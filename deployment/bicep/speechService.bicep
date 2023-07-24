@@ -1,12 +1,15 @@
 param speechServiceName string
 param keyVaultName string
+param location string
 
 resource account 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   name: speechServiceName
+  location: location
   kind: 'SpeechServices'
   sku: {
     name: 'S0'
   }
+  properties: {}
 }
 
 resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' existing = {

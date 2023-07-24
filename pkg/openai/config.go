@@ -8,6 +8,11 @@ import (
 
 // CreateUrl creates an url for the request
 func CreateUrl(endpoint, deploymentName string) string {
+	//if last character is /, remove it
+	if endpoint[len(endpoint)-1:] == "/" {
+		endpoint = endpoint[:len(endpoint)-1]
+	}
+
 	apiVersion := "2023-03-15-preview"
 	return fmt.Sprintf("%s/openai/deployments/%s/chat/completions?api-version=%s", endpoint, deploymentName, apiVersion)
 }

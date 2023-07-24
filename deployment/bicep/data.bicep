@@ -10,7 +10,7 @@ param managedIdentityObjectId string
 @description('Short name for the table, used for the stream name and table name. Should not contain the _CL ending. The template will handle that.')
 param painTableShortName string = 'PainDescriptions'
 var realTableName = '${painTableShortName}_CL'
-var dataCollectionStreamName = 'Custom_${painTableShortName}_CL'
+var dataCollectionStreamName = 'Custom-${customTable.name}'
 
 var tableSchema = [
   {
@@ -65,10 +65,13 @@ resource customTable 'Microsoft.OperationalInsights/workspaces/tables@2022-10-01
   properties: {
     plan: 'Analytics'
     retentionInDays: 730
-    totalRetentionInDays: 1825
+    totalRetentionInDays: 2556
     schema: {
-      name: painTableShortName
-      columns: tableSchema
+      name: realTableName
+      columns: union(tableSchema, [ {
+            name: 'TimeGenerated'
+            type: 'datetime'
+          } ])
     }
   }
 }

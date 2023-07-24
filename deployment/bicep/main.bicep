@@ -1,5 +1,5 @@
 param appName string = 't-pain'
-param environment string = 'dev2'
+param environment string = 'dev'
 param location string = 'westeurope'
 
 @secure()
@@ -41,6 +41,7 @@ module identity 'identity.bicep' = {
     location: location
     userAssignedIdentityName: naming.userAssignedIdentity
     registryResourceId: registryResourceId
+    keyVaultName: keyvault.outputs.keyVaultName
   }
 }
 
@@ -70,6 +71,7 @@ module speech 'speechService.bicep' = {
   params: {
     keyVaultName: keyvault.outputs.keyVaultName
     speechServiceName: naming.speech
+    location: location
   }
 }
 
@@ -93,7 +95,7 @@ module app 'app.bicep' = {
     containerAppEnvName: naming.containerAppEnv
     containerAppName: naming.containerApp
     location: location
-    logAnalyticsCustomerId: lawbase.outputs.logAnalyticsCustomerId
+    logAnalyticsName: lawbase.outputs.logAnalyticsName
     dataCollectionSecretUris: data.outputs.secretUris
     openAiSecretUris: openAiService.outputs.secretUris
     speechSecretUris: speech.outputs.secretUris

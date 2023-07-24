@@ -14,7 +14,6 @@ resource openAiService 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
   properties: {
     publicNetworkAccess: 'Enabled'
     customSubDomainName: openAiServiceName
-    disableLocalAuth: true
   }
 }
 
@@ -36,13 +35,14 @@ resource openAI_deployment 'Microsoft.CognitiveServices/accounts/deployments@202
   parent: openAiService
   name: 'gpt35'
   sku: {
-    name: 'S0'
+    name: 'Standard'
+    capacity: 20
   }
   properties: {
     model: {
       name: 'gpt-35-turbo'
       version: '0613'
-      format: 'OpenAi'
+      format: 'OpenAI'
     }
   }
 }
@@ -71,7 +71,7 @@ resource openAiDeployment 'Microsoft.KeyVault/vaults/secrets@2023-02-01' = {
   parent: keyVault
   name: 'openAiDeployment'
   properties: {
-    value: openAiService.properties.endpoint
+    value: openAI_deployment.name
   }
 }
 

@@ -15,7 +15,7 @@ func main() {
 	// Generate random data going back two years from today containing 1-2 pain descriptions per day
 	s := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(s)
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 20; i++ {
 		// Generate a date going back from today
 		date := time.Now().AddDate(0, 0, -i)
 

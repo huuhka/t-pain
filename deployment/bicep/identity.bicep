@@ -1,6 +1,7 @@
 param userAssignedIdentityName string
 param location string
 param registryResourceId string
+param keyVaultName string
 
 resource userAssignedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: userAssignedIdentityName
@@ -14,9 +15,17 @@ module registryPermissions 'registrypermissions.bicep' = {
   name: 'registryPermissions'
   params: {
     registryName: registryName
-    principalId: userAssignedIdentity.properties.principalId
+    identityPrincipalId: userAssignedIdentity.properties.principalId
   }
   scope: resourceGroup(registryRg)
+}
+
+module keyVaultPermissions 'keyvaultSecretUser.bicep' = {
+  name: 'keyVaultPermissions'
+  params: {
+    keyVaultName: keyVaultName
+    identityPrincipalId: userAssignedIdentity.properties.principalId
+  }
 }
 
 output userAssignedIdentityResourceId string = userAssignedIdentity.id
