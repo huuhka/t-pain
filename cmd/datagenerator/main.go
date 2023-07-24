@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"math/rand"
 	"os"
+	"t-pain/pkg/database"
 	"t-pain/pkg/models"
 	"time"
 )
@@ -14,7 +15,7 @@ func main() {
 	// Generate random data going back two years from today containing 1-2 pain descriptions per day
 	s := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(s)
-	for i := 0; i < 730; i++ {
+	for i := 0; i < 5; i++ {
 		// Generate a date going back from today
 		date := time.Now().AddDate(0, 0, -i)
 
@@ -60,23 +61,23 @@ func main() {
 		}
 	}
 
-	//client, err := database.NewLogAnalyticsClient(
-	//	os.Getenv("DATA_COLLECTION_ENDPOINT"),
-	//	os.Getenv("DATA_COLLECTION_RULE_ID"),
-	//	os.Getenv("DATA_COLLECTION_STREAM_NAME"))
-	//if err != nil {
-	//	panic(err)
-	//}
-	//
-	//err = client.SavePainDescriptionsToLogAnalytics(data)
-	//if err != nil {
-	//	panic(err)
-	//}
-
-	err := SavePainDescriptionsToFile(data, "paindescriptions.json")
+	client, err := database.NewLogAnalyticsClient(
+		os.Getenv("DATA_COLLECTION_ENDPOINT"),
+		os.Getenv("DATA_COLLECTION_RULE_ID"),
+		os.Getenv("DATA_COLLECTION_STREAM_NAME"))
 	if err != nil {
 		panic(err)
 	}
+
+	err = client.SavePainDescriptionsToLogAnalytics(data)
+	if err != nil {
+		panic(err)
+	}
+
+	//err := SavePainDescriptionsToFile(data, "paindescriptions.json")
+	//if err != nil {
+	//	panic(err)
+	//}
 }
 
 func SavePainDescriptionsToFile(data []models.PainDescriptionLogEntry, filename string) error {
