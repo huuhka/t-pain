@@ -33,6 +33,16 @@ The bot will then generate an object based on the data given and log it into Azu
 The user has access to a Azure workbook that allows them to use premade charts of their data and create
 their own queries based on Kusto Query Language.
 
+## IaC Deployment
+
+´´´powershell
+Dev:
+New-AzResourceGroupDeployment -ResourceGroupName "t-pain-dev" -TemplateFile ./deployment/bicep/main.bicep -TemplateParameterFile ./deployment/bicep/params-dev.json
+
+Prod:
+New-AzResourceGroupDeployment -ResourceGroupName "t-pain-prod" -TemplateFile ./deployment/bicep/main.bicep -TemplateParameterFile ./deployment/bicep/params-prod.json
+´´´
+
 # Notes
 
 - The current implementation with Azure Log Analytics is not perfect. The obvious tradeoff is that the data cannot
