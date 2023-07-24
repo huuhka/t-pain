@@ -161,6 +161,7 @@ func (b *Bot) saveDataToLogAnalytics(userId int64, pd []models.PainDescription) 
 	return nil
 }
 
+// fmtReply formats a non-error reply to the user
 func fmtReply(pd []models.PainDescription) string {
 	var result strings.Builder
 	if len(pd) == 0 {
