@@ -1,11 +1,13 @@
 # T-Pain Bot
+
 T-Pain Bot is a telegram bot that helps the user track their daily pain levels using either audio or text messages. It utilizes Azure Cognitive Services, OpenAI and Azure Log Analytics and at this point is designed for only a very limited set of users.
 
 # Requirements
 
 The following environment variables are expected to be populated before running the bot:
+
 - **BOT_TOKEN**: The token of the telegram bot
-- **DATA_COLLECTION_ENDPOINT**: 
+- **DATA_COLLECTION_ENDPOINT**: Log ingestion address of the data collection endpoint
 - **DATA_COLLECTION_RULE_ID**: the immutable rule id of the azure monitor data collection rule
 - **DATA_COLLECTION_STREAM_NAME**: the name of the "Data Source" in Azure Monitor Data collection rule. Should be something like "Custom-YourDataTableName_CL"
 - **OPENAI_DEPLOYMENT_NAME**: the name of the Azure OpenAI deployment
@@ -31,6 +33,16 @@ The bot will then generate an object based on the data given and log it into Azu
 The user has access to a Azure workbook that allows them to use premade charts of their data and create
 their own queries based on Kusto Query Language.
 
+## IaC Deployment
+
+´´´powershell
+Dev:
+New-AzResourceGroupDeployment -ResourceGroupName "t-pain-dev" -TemplateFile ./deployment/bicep/main.bicep -TemplateParameterFile ./deployment/bicep/params-dev.json
+
+Prod:
+New-AzResourceGroupDeployment -ResourceGroupName "t-pain-prod" -TemplateFile ./deployment/bicep/main.bicep -TemplateParameterFile ./deployment/bicep/params-prod.json
+´´´
+
 # Notes
 
 - The current implementation with Azure Log Analytics is not perfect. The obvious tradeoff is that the data cannot
@@ -40,7 +52,6 @@ their own queries based on Kusto Query Language.
 
 # Still missing
 
-- Bicep IaC implementation coming a bit later.
 - Better testing (or any, really)
 - Health check support in the container
 - /about or other commands support

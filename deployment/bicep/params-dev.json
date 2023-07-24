@@ -1,0 +1,18 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environment": {
+      "value": "dev2"
+    },
+    "registryResourceId": {
+      "value": "/subscriptions/ede0939c-80c4-4dfe-bf3d-84521f3f6d1f/resourceGroups/containerregistry/providers/Microsoft.ContainerRegistry/registries/huuhka/overview"
+    },
+    "developerGroupObjectId": {
+      "value": "f8c357f7-0b21-4a15-9699-a9ebf5f5c075"
+    },
+    "containerTag": {
+      "value": "20230724112442"
+    }
+  }
+}
