@@ -4,29 +4,24 @@ import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
-	"os"
 	"strings"
 	"t-pain/pkg/database"
 	"t-pain/pkg/models"
 	"t-pain/pkg/openai"
 	"t-pain/pkg/speechtotext"
 	"time"
+	_ "time/tzdata"
 )
 
 type Bot struct {
 	bot                *tgbotapi.BotAPI
 	speechConfig       *speechtotext.Config
-	openAIClient       *openai.OpenAiClient
+	openAIClient       *openai.Client
 	logAnalyticsClient *database.LogAnalyticsClient
 }
 
-func Run() error {
-	botToken, err := getBotToken()
-	if err != nil {
-		return err
-	}
-
-	b, err := NewBot(botToken)
+func Run(c *Config) error {
+	b, err := NewBot(c)
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
@@ -40,6 +35,10 @@ func Run() error {
 				b.reply(update, "You are not authorized to use this bot")
 				continue
 			}
+			if update.Message.IsCommand() {
+				b.reply(update, "Welcome to the T-Pain bot. You can send me a voice message or text message and I will log it. No commands are currently supported.")
+				continue
+			}
 			go b.processMessage(update)
 		}
 	}
@@ -47,15 +46,16 @@ func Run() error {
 	return err
 }
 
-func NewBot(botToken string) (*Bot, error) {
+func NewBot(c *Config) (*Bot, error) {
 
 	botObj := &Bot{}
 
-	bot, err := tgbotapi.NewBotAPI(botToken)
+	bot, err := tgbotapi.NewBotAPI(c.BotToken)
 	if err != nil {
 		return nil, err
 	}
 
+	// TODO: Make debug optional
 	//env := os.Getenv("ENV")
 	//if env == "Development" {
 	//	bot.Debug = true
@@ -67,29 +67,21 @@ func NewBot(botToken string) (*Bot, error) {
 	botObj.bot = bot
 
 	// SPEECH TO TEXT
-	speechKey := os.Getenv("SPEECH_KEY")
-	speechRegion := os.Getenv("SPEECH_REGION")
-	botObj.speechConfig = speechtotext.NewConfig(speechKey, speechRegion)
+	botObj.speechConfig = speechtotext.NewConfig(c.SpeechKey, c.SpeechRegion)
 
-	// OPENAI, TODO make this a bit clearer
-	openAIKey := os.Getenv("OPENAI_KEY")
-	openAIEndpoint := os.Getenv("OPENAI_ENDPOINT")
-	openAiDeployment := os.Getenv("OPENAI_DEPLOYMENT")
-	config, err := openai.NewConfig(openAIEndpoint, openAiDeployment, openai.WithApiKey(openAIKey))
+	// OPENAI
+	oaiConf, err := openai.NewConfig(c.openAiEndpoint, c.openAiDeploymentName, openai.WithApiKey(c.openAiKey))
 	if err != nil {
 		return nil, err
 	}
-	openAIClient, err := openai.NewOpenAiClient(config)
+	openAIClient, err := openai.NewClient(oaiConf)
 	if err != nil {
 		return nil, err
 	}
 	botObj.openAIClient = openAIClient
 
 	// DATA SAVING
-	dcEndpoint := os.Getenv("DATA_COLLECTION_ENDPOINT")
-	dcRuleId := os.Getenv("DATA_COLLECTION_RULE_ID")
-	dcStreamName := os.Getenv("DATA_COLLECTION_STREAM_NAME")
-	dcClient, err := database.NewLogAnalyticsClient(dcEndpoint, dcRuleId, dcStreamName)
+	dcClient, err := database.NewLogAnalyticsClient(c.dataCollectionEndpoint, c.dataCollectionRuleId, c.dataCollectionStreamName)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +109,7 @@ func (b *Bot) processMessage(update tgbotapi.Update) {
 		return
 	}
 
-	err = b.saveDataToLogAnalytics(painDesc)
+	err = b.saveDataToLogAnalytics(update.Message.From.ID, painDesc)
 	if err != nil {
 		log.Printf("Error saving data to log analytics: %v", err)
 		b.reply(update, "Error saving data. Please contact Pasi and try again later.")
@@ -162,10 +154,10 @@ func (b *Bot) processToText(update tgbotapi.Update) (string, error) {
 	return text, nil
 }
 
-func (b *Bot) saveDataToLogAnalytics(pd []models.PainDescription) error {
+func (b *Bot) saveDataToLogAnalytics(userId int64, pd []models.PainDescription) error {
 	var data []models.PainDescriptionLogEntry
 	for _, pain := range pd {
-		data = append(data, pain.MapToLogEntry())
+		data = append(data, pain.MapToLogEntry(userId))
 	}
 	err := b.logAnalyticsClient.SavePainDescriptionsToLogAnalytics(data)
 	if err != nil {
@@ -174,14 +166,7 @@ func (b *Bot) saveDataToLogAnalytics(pd []models.PainDescription) error {
 	return nil
 }
 
-func getBotToken() (string, error) {
-	botToken := os.Getenv("BOT_TOKEN")
-	if botToken == "" {
-		return "", fmt.Errorf("unable to get bot token, BOT_TOKEN env variable is empty")
-	}
-	return botToken, nil
-}
-
+// fmtReply formats a non-error reply to the user
 func fmtReply(pd []models.PainDescription) string {
 	var result strings.Builder
 	if len(pd) == 0 {
@@ -190,7 +175,11 @@ func fmtReply(pd []models.PainDescription) string {
 
 	first := pd[0]
 
-	loc, _ := time.LoadLocation("Europe/Helsinki")
+	loc, err := time.LoadLocation("Europe/Helsinki")
+	if err != nil {
+		log.Printf("Error loading location: %v", err)
+		return "Error generating reply from description. Your data has been saved. Please contact Pasi"
+	}
 	tstamp := first.Timestamp.Round(time.Minute).In(loc).Format("02-01-2006 15:04")
 
 	result.WriteString(fmt.Sprintf("Timestamp: %s\n", tstamp))

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"math/rand"
 	"os"
-	"t-pain/pkg/database"
 	"t-pain/pkg/models"
 	"time"
 )
@@ -55,29 +54,29 @@ func main() {
 				NumbnessDescription: numbnessDescription,
 			}
 
-			pdLog := painDescription.MapToLogEntry()
+			pdLog := painDescription.MapToLogEntry(175255021)
 
 			data = append(data, pdLog)
 		}
 	}
 
-	client, err := database.NewLogAnalyticsClient(
-		os.Getenv("DATA_COLLECTION_ENDPOINT"),
-		os.Getenv("DATA_COLLECTION_RULE_ID"),
-		os.Getenv("DATA_COLLECTION_STREAM_NAME"))
-	if err != nil {
-		panic(err)
-	}
-
-	err = client.SavePainDescriptionsToLogAnalytics(data)
-	if err != nil {
-		panic(err)
-	}
-
-	//err := SavePainDescriptionsToFile(data, "paindescriptions.json")
+	//client, err := database.NewLogAnalyticsClient(
+	//	os.Getenv("DATA_COLLECTION_ENDPOINT"),
+	//	os.Getenv("DATA_COLLECTION_RULE_ID"),
+	//	os.Getenv("DATA_COLLECTION_STREAM_NAME"))
 	//if err != nil {
 	//	panic(err)
 	//}
+	//
+	//err = client.SavePainDescriptionsToLogAnalytics(data)
+	//if err != nil {
+	//	panic(err)
+	//}
+
+	err := SavePainDescriptionsToFile(data, "paindescriptions.json")
+	if err != nil {
+		panic(err)
+	}
 }
 
 func SavePainDescriptionsToFile(data []models.PainDescriptionLogEntry, filename string) error {
