@@ -144,7 +144,7 @@ func (wrapper *SDKWrapper) StopContinuous() error {
 	return <-wrapper.recognizer.StopContinuousRecognitionAsync()
 }
 
-func PumpFileContinuously(stop chan int, filename string, wrapper *SDKWrapper) {
+func PumpFileToStream(stop chan int, filename string, wrapper *SDKWrapper) {
 	file, err := os.Open(filename)
 	if err != nil {
 		fmt.Println("Error opening file: ", err)
@@ -166,37 +166,6 @@ func PumpFileContinuously(stop chan int, filename string, wrapper *SDKWrapper) {
 			if err != nil {
 				fmt.Println("Error writing last data chunk to the stream")
 			}
-			return
-		}
-		if err != nil {
-			fmt.Println("Error reading file: ", err)
-			break
-		}
-		err = wrapper.Write(buffer[0:n])
-		if err != nil {
-			fmt.Println("Error writing to the stream")
-		}
-	}
-}
-
-func PumpFileContinuously2(stop chan int, filename string, wrapper *SDKWrapper) {
-	file, err := os.Open(filename)
-	if err != nil {
-		fmt.Println("Error opening file: ", err)
-		return
-	}
-	defer file.Close()
-	reader := bufio.NewReader(file)
-	buffer := make([]byte, 3200)
-	for {
-		select {
-		case <-stop:
-			fmt.Println("Stopping pump...")
-			return
-		case <-time.After(100 * time.Millisecond):
-		}
-		n, err := reader.Read(buffer)
-		if err == io.EOF {
 			return
 		}
 		if err != nil {

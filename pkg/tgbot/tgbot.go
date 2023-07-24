@@ -16,7 +16,7 @@ import (
 type Bot struct {
 	bot                *tgbotapi.BotAPI
 	speechConfig       *speechtotext.Config
-	openAIClient       *openai.OpenAiClient
+	openAIClient       *openai.Client
 	logAnalyticsClient *database.LogAnalyticsClient
 }
 
@@ -51,6 +51,7 @@ func NewBot(c *Config) (*Bot, error) {
 		return nil, err
 	}
 
+	// TODO: Make debug optional
 	//env := os.Getenv("ENV")
 	//if env == "Development" {
 	//	bot.Debug = true
@@ -69,7 +70,7 @@ func NewBot(c *Config) (*Bot, error) {
 	if err != nil {
 		return nil, err
 	}
-	openAIClient, err := openai.NewOpenAiClient(oaiConf)
+	openAIClient, err := openai.NewClient(oaiConf)
 	if err != nil {
 		return nil, err
 	}

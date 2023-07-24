@@ -14,7 +14,7 @@ func HandleAudioLink(url string, wrapper *SDKWrapper) (string, error) {
 
 	stop := make(chan int)
 	ready := make(chan struct{})
-	go PumpFileContinuously(stop, wavFile, wrapper)
+	go PumpFileToStream(stop, wavFile, wrapper)
 
 	var resultText []string
 
@@ -32,6 +32,7 @@ func HandleAudioLink(url string, wrapper *SDKWrapper) (string, error) {
 			if event.Cancellation.Reason.String() == "Error" {
 				log.Println("ErrorCode:" + event.Cancellation.ErrorCode.String() + " ErrorDetails: " + event.Cancellation.ErrorDetails)
 			}
+			// TODO: If we receive an error here, the writing to the stream should be stopped. Currently that does not seem to happen.
 		}
 	})
 

@@ -6,7 +6,7 @@ import (
 	"t-pain/pkg/models"
 )
 
-// CreateUrl creates a url for the request
+// CreateUrl creates an url for the request
 func CreateUrl(endpoint, deploymentName string) string {
 	apiVersion := "2023-03-15-preview"
 	return fmt.Sprintf("%s/openai/deployments/%s/chat/completions?api-version=%s", endpoint, deploymentName, apiVersion)
@@ -125,6 +125,7 @@ func WithApiKey(apiKey string) ConfigOpt {
 }
 
 func WithAzureCredential() ConfigOpt {
+	// TODO: This should be tested with a real environment
 	return func(c *Config) error {
 		cred, err := LoginWithDefaultCredential()
 		if err != nil {

@@ -10,6 +10,7 @@ import (
 	"os/exec"
 )
 
+// handleAudioFileSetup downloads the audio file from the url, converts it to wav, and returns the wav file name
 func handleAudioFileSetup(url string) (string, error) {
 	// Generate new guid
 	newGuid, err := uuid.NewUUID()
