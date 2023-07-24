@@ -37,4 +37,11 @@ their own queries based on Kusto Query Language.
   be edited or deleted by the user (or really, the admin either). However, as the use case is for
   such a limited userbase, we can probably live with that.
 - In later versions, we can easily import the current data to another database, if needed.
+
+# Still missing
+
 - Bicep IaC implementation coming a bit later.
+- Better testing (or any, really)
+- Health check support in the container
+- /about or other commands support
+- Maybe some kind of approval flow from the user to avoid saving incorrect data?
