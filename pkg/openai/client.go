@@ -78,7 +78,7 @@ func WithHttpClient(client *http.Client) ClientOption {
 	}
 }
 
-// BearerTokenRoundTripper is an http.RoundTripper that adds a bearer token to the request
+// BearerTokenRoundTripper is a http.RoundTripper that adds a bearer token to the request
 type BearerTokenRoundTripper struct {
 	Transport   http.RoundTripper
 	BearerToken string
