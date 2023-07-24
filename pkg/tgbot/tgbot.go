@@ -35,6 +35,10 @@ func Run(c *Config) error {
 				b.reply(update, "You are not authorized to use this bot")
 				continue
 			}
+			if update.Message.IsCommand() {
+				b.reply(update, "Welcome to the T-Pain bot. You can send me a voice message or text message and I will log it. No commands are currently supported.")
+				continue
+			}
 			go b.processMessage(update)
 		}
 	}

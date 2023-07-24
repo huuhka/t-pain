@@ -21,8 +21,7 @@ Or just build the dockerfile, that should work with non-mac environments.
 
 # Usage
 
-The bot is currently only usable by the users listed in models/users.go. It's also only tested in a private chat,
-with the userIds actually being the Ids of the chats with the bot.
+The bot is currently only usable by the users listed in models/users.go. It's also only tested in a private chat.
 
 The user message should contain description of their current pains: their location, levels from 0-10 and optionally
 further description regarding radiation, numbness etc.
