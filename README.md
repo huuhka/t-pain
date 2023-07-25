@@ -16,8 +16,10 @@ The following environment variables are expected to be populated before running 
 - **SPEECH_KEY**: the api key of the Azure Cognitive Services Speech service
 - **SPEECH_REGION**: the region of the Azure Cognitive Services Speech service
 
-You might also need to install the Speech Service SDK for Go. It's a bit of a mess:
+You also need to install the Speech Service SDK for Go. It's a bit of a mess:
 https://learn.microsoft.com/en-us/azure/ai-services/speech-service/quickstarts/setup-platform?pivots=programming-language-go&tabs=windows,ubuntu,dotnetcli,dotnet,jre,maven,browser,mac,pypi#platform-requirements
+
+FFMPEG needs to be installed and found in the PATH as we use it with Exec.
 
 Or just build the dockerfile, that should work with non-mac environments.
 
