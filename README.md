@@ -35,13 +35,13 @@ their own queries based on Kusto Query Language.
 
 ## IaC Deployment
 
-´´´powershell
+```powershell
 Dev:
 New-AzResourceGroupDeployment -ResourceGroupName "t-pain-dev" -TemplateFile ./deployment/bicep/main.bicep -TemplateParameterFile ./deployment/bicep/params-dev.json
 
 Prod:
 New-AzResourceGroupDeployment -ResourceGroupName "t-pain-prod" -TemplateFile ./deployment/bicep/main.bicep -TemplateParameterFile ./deployment/bicep/params-prod.json
-´´´
+```
 
 # Notes
 
