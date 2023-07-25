@@ -52,6 +52,7 @@ New-AzResourceGroupDeployment -ResourceGroupName "t-pain-prod" -TemplateFile ./d
 
 # Still missing
 
+- First implementation of the visualization on top of the data (e.g. Azure Workbooks)
 - Better testing (or any, really)
 - Health check support in the container
 - /about or other commands support
