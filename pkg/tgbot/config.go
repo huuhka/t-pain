@@ -47,7 +47,10 @@ func checkEmptyFields(c *Config) error {
 	v := reflect.ValueOf(*c)
 	for i := 0; i < v.NumField(); i++ {
 		if v.Field(i).String() == "" {
-			emptyValues += v.Type().Field(i).Name + ", "
+			if i != 0 {
+				emptyValues += ", "
+			}
+			emptyValues += v.Type().Field(i).Name
 		}
 	}
 

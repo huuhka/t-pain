@@ -1,9 +1,5 @@
 package speechtotext
 
-import "github.com/Microsoft/cognitive-services-speech-sdk-go/speech"
-
-// See https://github.com/microsoft/cognitive-services-speech-sdk-go/blob/v1.29.0/samples/recognizer/wrapper.go
-
 import (
 	"bufio"
 	"fmt"
@@ -13,7 +9,10 @@ import (
 	"time"
 
 	"github.com/Microsoft/cognitive-services-speech-sdk-go/audio"
+	"github.com/Microsoft/cognitive-services-speech-sdk-go/speech"
 )
+
+// Based heavily on https://github.com/microsoft/cognitive-services-speech-sdk-go/blob/v1.29.0/samples/recognizer/wrapper.go
 
 type SDKWrapperEventType int
 
