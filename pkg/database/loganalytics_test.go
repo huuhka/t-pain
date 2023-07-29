@@ -24,12 +24,12 @@ func TestSavePainDescriptionsToLogAnalytics(t *testing.T) {
 		uploadErr error
 		wantErr   bool
 	}{
-		"Upload succeeds": {
+		"Upload should succeed with valid data": {
 			painDesc: models.PainDescription{Level: 3, LocationId: 1, SideId: 2, Description: "Test"},
 			userId:   1111111111111111111,
 			wantErr:  false,
 		},
-		"Upload fails": {
+		"Upload should fail with invalid data": {
 			painDesc:  models.PainDescription{Level: 3, LocationId: 1, SideId: 2, Description: "Test"},
 			userId:    1111111111111111111,
 			uploadErr: errors.New("upload error"),

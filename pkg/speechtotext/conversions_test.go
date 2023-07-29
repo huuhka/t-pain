@@ -12,7 +12,7 @@ import (
 // Unsure if these should really just be deleted as wrapper_test.go already tests some of the same things from
 // outside the package. Leaving them in for now as they at least found a bug already.
 
-func TestHandleAudioFileSetup(t *testing.T) {
+func TestHandleAudioFileSetup_WithValidValues(t *testing.T) {
 	t.Parallel()
 	// Create a test server with a handler that serves up a test file
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +33,7 @@ func TestHandleAudioFileSetup(t *testing.T) {
 	defer os.Remove(filename)
 }
 
-func TestConvertOggToWav(t *testing.T) {
+func Test_ConvertOggToWav(t *testing.T) {
 	t.Parallel()
 	inputFile := "./testdata/working.ogg"
 	outputFile := "./testdata/working.wav"
@@ -50,7 +50,7 @@ func TestConvertOggToWav(t *testing.T) {
 	defer os.Remove(outputFile)
 }
 
-func TestDownloadFile(t *testing.T) {
+func Test_DownloadFile(t *testing.T) {
 	t.Parallel()
 	// Create a test server with a handler that serves up a test string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -79,7 +79,7 @@ func TestDownloadFile(t *testing.T) {
 	defer os.Remove(filename)
 }
 
-func TestDeleteFromDisk(t *testing.T) {
+func Test_DeleteFromDisk(t *testing.T) {
 	filename := "./testdata/deletetest.txt"
 
 	// Create a test file

@@ -40,7 +40,7 @@ func TestNewClient(t *testing.T) {
 	}
 }
 
-func TestClient_GetPainDescriptionObject_NormalResponse(t *testing.T) {
+func TestClient_GetPainDescriptionObject_ShouldSucceedOnNormalResponse(t *testing.T) {
 	t.Parallel()
 	mockClient := &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {

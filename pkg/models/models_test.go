@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func TestMapToLogEntryWithInvalidData(t *testing.T) {
+func TestMapToLogEntryWithInvalidDataShouldReturnError(t *testing.T) {
 	testCases := map[string]struct {
 		painDesc models.PainDescription
 		userId   int64

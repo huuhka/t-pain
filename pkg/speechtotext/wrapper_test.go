@@ -27,7 +27,7 @@ func (m *MockSDKWrapper) Write(data []byte) error {
 	return nil
 }
 
-func TestPumpFileToStream(t *testing.T) {
+func Test_PumpFileToStream_ShouldWorkWithValidValues(t *testing.T) {
 	// Create a temporary file with data
 	tempFile, err := os.CreateTemp(os.TempDir(), "testfile-")
 	if err != nil {

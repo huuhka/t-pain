@@ -60,7 +60,7 @@ func generateTestUpdate() tgbotapi.Update {
 	}
 }
 
-func TestBotProcessMessage(t *testing.T) {
+func Test_Bot_ShouldProcessNormalTextMessage(t *testing.T) {
 	t.Parallel()
 	mockBotAPI := new(MockBotAPI)
 	mockAI := new(MockAI)
@@ -87,7 +87,7 @@ func TestBotProcessMessage(t *testing.T) {
 	mockBotAPI.AssertExpectations(t)
 }
 
-func TestBotReply(t *testing.T) {
+func Test_Bot_Reply_ShouldSendMessageToUser(t *testing.T) {
 	t.Parallel()
 	mockBotAPI := new(MockBotAPI)
 	b := &Bot{Bot: mockBotAPI}
@@ -102,27 +102,31 @@ func TestBotReply(t *testing.T) {
 	mockBotAPI.AssertExpectations(t)
 }
 
-func TestBotProcessToText(t *testing.T) {
+func Test_Bot_ProcessToText_ShouldProcessText(t *testing.T) {
 	t.Parallel()
 	mockBotAPI := new(MockBotAPI)
 	b := &Bot{Bot: mockBotAPI, speechConfig: speechtotext.NewConfig("key", "region")}
 
-	// Case 1: Text message
 	update := generateTestUpdate()
 	update.Message.Text = "Hello"
 	text, err := b.processToText(update)
 	assert.Nil(t, err)
 	assert.Equal(t, "Hello", text)
+}
 
-	// Case 2: No text or voice message
-	update = generateTestUpdate()
+func Test_Bot_ProcessToText_ShouldNotProcessVideo(t *testing.T) {
+	t.Parallel()
+	mockBotAPI := new(MockBotAPI)
+	b := &Bot{Bot: mockBotAPI, speechConfig: speechtotext.NewConfig("key", "region")}
+
+	update := generateTestUpdate()
 	update.Message.Video = &tgbotapi.Video{}
 
-	_, err = b.processToText(update)
+	_, err := b.processToText(update)
 	assert.NotNil(t, err)
 }
 
-func TestBotSaveDataToLogAnalytics(t *testing.T) {
+func Test_Bot_SaveDataToLogAnalytics_ShouldCallExternalPackageWithDataIncluded(t *testing.T) {
 	t.Parallel()
 	mockLogAnalytics := new(MockLogAnalytics)
 	b := &Bot{logAnalyticsClient: mockLogAnalytics}
@@ -146,7 +150,7 @@ func TestBotSaveDataToLogAnalytics(t *testing.T) {
 	mockLogAnalytics.AssertExpectations(t)
 }
 
-func TestFmtReplyShouldNotBeEmpty(t *testing.T) {
+func Test_FmtReply_ShouldNotBeEmpty(t *testing.T) {
 	t.Parallel()
 	painDesc := []models.PainDescription{
 		{
