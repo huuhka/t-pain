@@ -14,9 +14,13 @@ import (
 	"time"
 )
 
+type Doer interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
 type Client struct {
 	config     *Config
-	httpClient *http.Client
+	HttpClient Doer
 }
 
 func NewClient(config *Config, opts ...ClientOption) (*Client, error) {
@@ -49,7 +53,7 @@ func NewClient(config *Config, opts ...ClientOption) (*Client, error) {
 
 	client := Client{
 		config:     config,
-		httpClient: &httpClient,
+		HttpClient: &httpClient,
 	}
 
 	for _, opt := range opts {
@@ -64,16 +68,9 @@ func NewClient(config *Config, opts ...ClientOption) (*Client, error) {
 
 type ClientOption func(*Client) error
 
-func WithTimeout(timeout time.Duration) ClientOption {
+func WithDoer(client Doer) ClientOption {
 	return func(c *Client) error {
-		c.httpClient.Timeout = timeout
-		return nil
-	}
-}
-
-func WithHttpClient(client *http.Client) ClientOption {
-	return func(c *Client) error {
-		c.httpClient = client
+		c.HttpClient = client
 		return nil
 	}
 }
@@ -110,11 +107,11 @@ func (c Client) GetPainDescriptionObject(painDescription string) ([]models.PainD
 
 	// create request
 	req, cancel, err := c.createRequest(&conversation)
-	defer cancel()
 	if err != nil {
 		return painDescObj, fmt.Errorf("unable to create request: %w", err)
 	}
-	resp, err := c.httpClient.Do(req)
+	defer cancel()
+	resp, err := c.HttpClient.Do(req)
 	if err != nil {
 		return painDescObj, fmt.Errorf("unable to send request: %w", err)
 	}

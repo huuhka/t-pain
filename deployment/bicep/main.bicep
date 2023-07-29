@@ -9,6 +9,8 @@ param botToken string
 param registryResourceId string
 param developerGroupObjectId string
 
+param customTableName string = 'PainDesc'
+
 param containerTag string
 
 param buildId string = utcNow()
@@ -21,7 +23,7 @@ var naming = {
   userAssignedIdentity: '${namingPrefix}-appid'
   dataCollectionRule: '${namingPrefix}-dcr'
   dataCollectionEndpoint: '${namingPrefix}-dce'
-  customTable: 'PainDescriptions'
+  customTable: customTableName
   speech: '${namingPrefix}-speech'
   containerAppEnv: '${namingPrefix}-appenv'
   containerApp: '${namingPrefix}-app'

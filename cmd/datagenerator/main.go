@@ -15,7 +15,7 @@ func main() {
 	// Generate random data going back two years from today containing 1-2 pain descriptions per day
 	s := rand.NewSource(time.Now().UnixNano())
 	r := rand.New(s)
-	for i := 0; i < 20; i++ {
+	for i := 0; i < 5; i++ {
 		// Generate a date going back from today
 		date := time.Now().AddDate(0, 0, -i)
 
@@ -55,15 +55,18 @@ func main() {
 				NumbnessDescription: numbnessDescription,
 			}
 
-			pdLog := painDescription.MapToLogEntry(175255021)
+			pdLog, err := painDescription.MapToLogEntry(175255021)
+			if err != nil {
+				panic(err)
+			}
 
 			data = append(data, pdLog)
 		}
 	}
 
 	client, err := database.NewLogAnalyticsClient(
-		os.Getenv("DATA_COLLECTION_ENDPOINT"),
-		os.Getenv("DATA_COLLECTION_RULE_ID"),
+		os.Getenv("DATA_COLLECTION_ENDPOINT_LIVE"),
+		os.Getenv("DATA_COLLECTION_RULE_ID_LIVE"),
 		os.Getenv("DATA_COLLECTION_STREAM_NAME"))
 	if err != nil {
 		panic(err)

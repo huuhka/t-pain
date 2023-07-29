@@ -13,61 +13,42 @@ import (
 	_ "time/tzdata"
 )
 
+type OpenAIClient interface {
+	GetPainDescriptionObject(string) ([]models.PainDescription, error)
+}
+
+type LogAnalyticsClient interface {
+	SavePainDescriptionsToLogAnalytics([]models.PainDescriptionLogEntry) error
+}
+
 type Bot struct {
-	bot                *tgbotapi.BotAPI
+	Bot                BotAPI
 	speechConfig       *speechtotext.Config
-	openAIClient       *openai.Client
-	logAnalyticsClient *database.LogAnalyticsClient
+	openAIClient       OpenAIClient
+	logAnalyticsClient LogAnalyticsClient
+	done               chan struct{}
 }
 
-func Run(c *Config) error {
-	b, err := NewBot(c)
-
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
-
-	updates := b.bot.GetUpdatesChan(u)
-
-	for update := range updates {
-		if update.Message != nil { // If we got a message
-			if _, ok := models.UserIDs[update.Message.From.ID]; !ok {
-				log.Printf("Unauthorized user tried to use the bot: %v", update.Message.From)
-				b.reply(update, "You are not authorized to use this bot")
-				continue
-			}
-			if update.Message.IsCommand() {
-				b.reply(update, "Welcome to the T-Pain bot. You can send me a voice message or text message and I will log it. No commands are currently supported.")
-				continue
-			}
-			go b.processMessage(update)
-		}
-	}
-
-	return err
-}
-
-func NewBot(c *Config) (*Bot, error) {
+func NewDefaultBot(c *Config) (*Bot, error) {
 
 	botObj := &Bot{}
+	done := make(chan struct{})
+	botObj.done = done
 
-	bot, err := tgbotapi.NewBotAPI(c.BotToken)
+	bot, err := tgbotapi.NewBotAPI(c.botToken)
 	if err != nil {
 		return nil, err
 	}
 
 	// TODO: Make debug optional
-	//env := os.Getenv("ENV")
-	//if env == "Development" {
-	//	bot.Debug = true
-	//}
 	bot.Debug = true
 
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
-	botObj.bot = bot
+	botObj.Bot = bot
 
 	// SPEECH TO TEXT
-	botObj.speechConfig = speechtotext.NewConfig(c.SpeechKey, c.SpeechRegion)
+	botObj.speechConfig = speechtotext.NewConfig(c.speechKey, c.speechRegion)
 
 	// OPENAI
 	oaiConf, err := openai.NewConfig(c.openAiEndpoint, c.openAiDeploymentName, openai.WithApiKey(c.openAiKey))
@@ -88,6 +69,57 @@ func NewBot(c *Config) (*Bot, error) {
 	botObj.logAnalyticsClient = dcClient
 
 	return botObj, nil
+}
+
+func NewInjectedBot(c *Config, openAIClient OpenAIClient, logAnalyticsClient LogAnalyticsClient) (*Bot, error) {
+	botObj := &Bot{}
+	botObj.done = make(chan struct{})
+
+	bot, err := tgbotapi.NewBotAPI(c.botToken)
+	if err != nil {
+		return nil, err
+	}
+	bot.Debug = true
+	botObj.Bot = bot
+
+	botObj.speechConfig = speechtotext.NewConfig(c.speechKey, c.speechRegion)
+	botObj.openAIClient = openAIClient
+	botObj.logAnalyticsClient = logAnalyticsClient
+	return botObj, nil
+}
+
+func (b *Bot) Run() {
+	u := tgbotapi.NewUpdate(0)
+	u.Timeout = 60
+
+	updates := b.Bot.GetUpdatesChan(u)
+
+	for {
+		select {
+		case update, ok := <-updates:
+			if !ok {
+				return
+			}
+			if update.Message != nil {
+				if _, ok := models.UserIDs[update.Message.From.ID]; !ok {
+					log.Printf("Unauthorized user tried to use the bot: %v", update.Message.From)
+					b.reply(update, "You are not authorized to use this bot")
+					continue
+				}
+				if update.Message.IsCommand() {
+					b.reply(update, "Welcome to the T-Pain bot. You can send me a voice message or text message and I will log it. No commands are currently supported.")
+					continue
+				}
+				go b.processMessage(update)
+			}
+		case <-b.done:
+			return
+		}
+	}
+}
+
+func (b *Bot) Stop() {
+	b.done <- struct{}{}
 }
 
 func (b *Bot) processMessage(update tgbotapi.Update) {
@@ -126,7 +158,7 @@ func (b *Bot) reply(update tgbotapi.Update, replyText string) {
 	//msg.ReplyToMessageID = update.Message.MessageID
 	msg.Text = replyText
 
-	if _, err := b.bot.Send(msg); err != nil {
+	if _, err := b.Bot.Send(msg); err != nil {
 		log.Printf("Error sending message: %v", err)
 	}
 }
@@ -135,7 +167,7 @@ func (b *Bot) processToText(update tgbotapi.Update) (string, error) {
 	var text string
 	if update.Message.Voice != nil {
 		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Voice.FileID)
-		fileLink, err := b.bot.GetFileDirectURL(update.Message.Voice.FileID)
+		fileLink, err := b.Bot.GetFileDirectURL(update.Message.Voice.FileID)
 		recognizer, err := speechtotext.NewWrapper(b.speechConfig.Key, b.speechConfig.Region)
 		if err != nil {
 			return "", fmt.Errorf("processToText: recognizer creation: %w", err)
@@ -157,7 +189,11 @@ func (b *Bot) processToText(update tgbotapi.Update) (string, error) {
 func (b *Bot) saveDataToLogAnalytics(userId int64, pd []models.PainDescription) error {
 	var data []models.PainDescriptionLogEntry
 	for _, pain := range pd {
-		data = append(data, pain.MapToLogEntry(userId))
+		logEntry, err := pain.MapToLogEntry(userId)
+		if err != nil {
+			return fmt.Errorf("saveDataToLogAnalytics: %w", err)
+		}
+		data = append(data, logEntry)
 	}
 	err := b.logAnalyticsClient.SavePainDescriptionsToLogAnalytics(data)
 	if err != nil {
