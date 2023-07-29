@@ -13,6 +13,9 @@
     },
     "containerTag": {
       "value": "20230724112442"
+    },
+    "customTableName": {
+      "value": "PainDescriptions"
     }
   }
 }

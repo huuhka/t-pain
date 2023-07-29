@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "environment": {
-      "value": "prod"
+      "value": "live"
     },
     "registryResourceId": {
       "value": "/subscriptions/ede0939c-80c4-4dfe-bf3d-84521f3f6d1f/resourceGroups/containerregistry/providers/Microsoft.ContainerRegistry/registries/huuhka/overview"
