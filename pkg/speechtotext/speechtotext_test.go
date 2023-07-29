@@ -13,6 +13,7 @@ import (
 )
 
 func TestHandleAudioLink_Success(t *testing.T) {
+	t.Parallel()
 	mockWrapper := &MockSDKWrapper{
 		StartContinuousFunc: func(eventHandler func(event *speechtotext.SDKWrapperEvent)) error {
 			go func() {
@@ -73,6 +74,7 @@ func TestHandleAudioLink_Success(t *testing.T) {
 }
 
 func TestHandleAudioLink_ErrorFromDownload(t *testing.T) {
+	t.Parallel()
 	mockWrapper := &MockSDKWrapper{
 		StartContinuousFunc: func(eventHandler func(event *speechtotext.SDKWrapperEvent)) error {
 			return errors.New("mock error")
@@ -82,8 +84,13 @@ func TestHandleAudioLink_ErrorFromDownload(t *testing.T) {
 		},
 	}
 
-	// Test audio link
-	audioLink := "http://dev.huuhka.net/audio.ogg"
+	// Create a test HTTP server
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	}))
+	defer server.Close()
+
+	// Use the URL of the test server as the audio link
+	audioLink := server.URL
 
 	_, err := speechtotext.HandleAudioLink(audioLink, mockWrapper)
 	if err == nil {
