@@ -13,6 +13,13 @@ import (
 	_ "time/tzdata"
 )
 
+// BotAPI is an interface for used functions of tgbotapi.BotAPI to make testing easier
+type BotAPI interface {
+	GetFileDirectURL(fileID string) (string, error)
+	Send(c tgbotapi.Chattable) (tgbotapi.Message, error)
+	GetUpdatesChan(config tgbotapi.UpdateConfig) tgbotapi.UpdatesChannel
+}
+
 type OpenAIClient interface {
 	GetPainDescriptionObject(string) ([]models.PainDescription, error)
 }
@@ -21,6 +28,7 @@ type LogAnalyticsClient interface {
 	SavePainDescriptionsToLogAnalytics([]models.PainDescriptionLogEntry) error
 }
 
+// Bot contains the bot and all the clients
 type Bot struct {
 	Bot                BotAPI
 	speechConfig       *speechtotext.Config
@@ -29,6 +37,7 @@ type Bot struct {
 	done               chan struct{}
 }
 
+// NewDefaultBot creates a new Bot with just a config struct
 func NewDefaultBot(c *Config) (*Bot, error) {
 
 	botObj := &Bot{}
@@ -71,6 +80,7 @@ func NewDefaultBot(c *Config) (*Bot, error) {
 	return botObj, nil
 }
 
+// NewInjectedBot creates a new Bot with all the clients injected to assist with testing if tests were placed outside the package
 func NewInjectedBot(c *Config, openAIClient OpenAIClient, logAnalyticsClient LogAnalyticsClient) (*Bot, error) {
 	botObj := &Bot{}
 	botObj.done = make(chan struct{})
