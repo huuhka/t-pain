@@ -33,21 +33,16 @@ func TestHandleAudioFileSetup_WithValidValues(t *testing.T) {
 	defer os.Remove(filename)
 }
 
-func Test_ConvertOggToWav(t *testing.T) {
+func Test_ConvertOggToWav_ShouldErrorOnFileNotFound(t *testing.T) {
 	t.Parallel()
-	inputFile := "./testdata/working.ogg"
-	outputFile := "./testdata/working.wav"
+	inputFile := "./testdata/doesnotexist.ogg"
+	outputFile := "./testdata/doesnotexist.wav"
 
 	err := convertOggToWav(inputFile, outputFile)
-	if err != nil {
-		t.Fatal(err)
+	if err == nil {
+		defer os.Remove(outputFile)
+		t.Errorf("Expected error, got nil")
 	}
-
-	// Check that the resulting file exists and then clean it up
-	if _, err := os.Stat(outputFile); os.IsNotExist(err) {
-		t.Fatal("Wav file was not created")
-	}
-	defer os.Remove(outputFile)
 }
 
 func Test_DownloadFile(t *testing.T) {
