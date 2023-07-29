@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestNewConfigShouldFailWithEmptyValues2(t *testing.T) {
+func TestNewConfigShouldFailWithEmptyValues(t *testing.T) {
 	tests := []struct {
 		name                                                                                                                                                       string
 		botToken, speechKey, speechRegion, openAiKey, openAiEndpoint, openAiDeploymentName, dataCollectionEndpoint, dataCollectionRuleId, dataCollectionStreamName string
