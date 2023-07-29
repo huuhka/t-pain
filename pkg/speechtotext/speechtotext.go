@@ -7,9 +7,18 @@ import (
 	"time"
 )
 
-func HandleAudioLink(url string, wrapper *SDKWrapper) (string, error) {
+type Wrapper interface {
+	StartContinuous(handler func(event *SDKWrapperEvent)) error
+	StopContinuous() error
+	Writer
+}
+
+func HandleAudioLink(url string, wrapper Wrapper) (string, error) {
 	// Download and convert
-	wavFile, _ := handleAudioFileSetup(url)
+	wavFile, err := handleAudioFileSetup(url)
+	if err != nil {
+		return "", err
+	}
 	defer deleteFromDisk(wavFile)
 
 	stop := make(chan int)
@@ -19,7 +28,7 @@ func HandleAudioLink(url string, wrapper *SDKWrapper) (string, error) {
 	var resultText []string
 
 	log.Println("Starting continuous recognition")
-	err := wrapper.StartContinuous(func(event *SDKWrapperEvent) {
+	err = wrapper.StartContinuous(func(event *SDKWrapperEvent) {
 		defer event.Close()
 		switch event.EventType {
 		case Recognized:
