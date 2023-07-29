@@ -27,9 +27,10 @@ func TestNewConfigShouldFailWithEmptyValues2(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt // capture range variable
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			_, err := tgbot.NewConfig(tt.botToken, tt.speechKey, tt.speechRegion, tt.openAiKey, tt.openAiEndpoint, tt.openAiDeploymentName, tt.dataCollectionEndpoint, tt.dataCollectionRuleId, tt.dataCollectionStreamName)
 
 			if err == nil {
