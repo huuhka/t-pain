@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 	"t-pain/pkg/tgbot"
 )
 
@@ -36,8 +38,19 @@ func main() {
 		log.Fatalln(fmt.Errorf("error creating config. Often relates to missing env variables in ALL_CAPS_SNAKE_CASE: %w", err))
 	}
 
-	err = tgbot.Run(conf)
+	b, err := tgbot.NewDefaultBot(conf)
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+
+	go func() {
+		<-signalChan
+		log.Println("Shutting down bot...")
+		b.Stop()
+	}()
+
+	b.Run()
 }

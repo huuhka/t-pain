@@ -6,9 +6,9 @@ import (
 )
 
 type Config struct {
-	BotToken                 string
-	SpeechRegion             string
-	SpeechKey                string
+	botToken                 string
+	speechRegion             string
+	speechKey                string
 	openAiKey                string
 	openAiEndpoint           string
 	openAiDeploymentName     string
@@ -20,9 +20,9 @@ type Config struct {
 // NewConfig creates a new Config struct that contains all the configurations required for the bot to run
 func NewConfig(botToken, speechKey, speechRegion, openAiKey, openAiEndpoint, openAiDeploymentName, dataCollectionEndpoint, dataCollectionRuleId, dataCollectionStreamName string) (*Config, error) {
 	c := &Config{
-		BotToken:                 botToken,
-		SpeechKey:                speechKey,
-		SpeechRegion:             speechRegion,
+		botToken:                 botToken,
+		speechKey:                speechKey,
+		speechRegion:             speechRegion,
 		openAiKey:                openAiKey,
 		openAiEndpoint:           openAiEndpoint,
 		openAiDeploymentName:     openAiDeploymentName,
