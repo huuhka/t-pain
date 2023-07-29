@@ -13,7 +13,7 @@ type BodyParts map[int]string
 func (bp BodyParts) String() string {
 	var result strings.Builder
 	result.WriteString("```\n")
-	for bodyPart, ID := range bp {
+	for ID, bodyPart := range bp {
 		result.WriteString(fmt.Sprintf("%d: %s\n", ID, bodyPart))
 	}
 	result.WriteString("```\n")
@@ -59,7 +59,7 @@ type Sides map[int]string
 func (sd Sides) String() string {
 	var result strings.Builder
 	result.WriteString("```\n")
-	for side, ID := range sd {
+	for ID, side := range sd {
 		result.WriteString(fmt.Sprintf("%d: %s\n", ID, side))
 	}
 	result.WriteString("```\n")
@@ -118,17 +118,31 @@ func (p *PainDescription) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (p *PainDescription) MapToLogEntry(userId int64) PainDescriptionLogEntry {
+func (p *PainDescription) MapToLogEntry(userId int64) (PainDescriptionLogEntry, error) {
+	locationName, locOk := BodyPartMapping[p.LocationId]
+	sideName, sideOk := SideMap[p.SideId]
+	userName, userOk := UserIDs[userId]
+
+	if !locOk {
+		return PainDescriptionLogEntry{}, fmt.Errorf("invalid LocationId: %d", p.LocationId)
+	}
+	if !sideOk {
+		return PainDescriptionLogEntry{}, fmt.Errorf("invalid SideId: %d", p.SideId)
+	}
+	if !userOk {
+		return PainDescriptionLogEntry{}, fmt.Errorf("invalid UserId: %d", userId)
+	}
+
 	p.Timestamp = p.Timestamp.UTC()
 
 	pdLog := PainDescriptionLogEntry{
 		PainDescription: *p,
-		LocationName:    BodyPartMapping[p.LocationId],
-		SideName:        SideMap[p.SideId],
-		UserName:        UserIDs[userId],
+		LocationName:    locationName,
+		SideName:        sideName,
+		UserName:        userName,
 	}
 
-	return pdLog
+	return pdLog, nil
 }
 
 func PrintPainDescriptionJSONFormat() string {

@@ -11,21 +11,42 @@ import (
 	"t-pain/pkg/models"
 )
 
+type AzureClient interface {
+	Upload(ctx context.Context, ruleID string, streamName string, logs []byte, options *azingest.UploadOptions) (azingest.UploadResponse, error)
+}
+
 type LogAnalyticsClient struct {
-	client     *azingest.Client
+	client     AzureClient
 	ruleId     string
 	streamName string
 }
 
-func NewLogAnalyticsClient(endpoint, ruleId, streamName string) (*LogAnalyticsClient, error) {
-	cred, err := getCredential()
-	if err != nil {
-		return nil, fmt.Errorf("unable to get credential: %w", err)
+func NewLogAnalyticsClient(endpoint, ruleId, streamName string, opts ...LogAnalyticsClientOption) (*LogAnalyticsClient, error) {
+	options := &LogAnalyticsClientOptions{}
+	for _, opt := range opts {
+		opt(options)
 	}
 
-	client, err := azingest.NewClient(endpoint, cred, nil)
-	if err != nil {
-		return nil, fmt.Errorf("unable to create client: %w", err)
+	var cred azcore.TokenCredential
+	var err error
+	if options.CustomCredential != nil {
+		cred = options.CustomCredential
+	} else {
+		cred, err = getCredential()
+		if err != nil {
+			return nil, fmt.Errorf("unable to get credential: %w", err)
+		}
+	}
+
+	var client AzureClient
+	if options.CustomClient != nil {
+		client = options.CustomClient
+	} else {
+		azClient, err := azingest.NewClient(endpoint, cred, nil)
+		if err != nil {
+			return nil, fmt.Errorf("unable to create client: %w", err)
+		}
+		client = azClient
 	}
 
 	return &LogAnalyticsClient{
@@ -33,6 +54,25 @@ func NewLogAnalyticsClient(endpoint, ruleId, streamName string) (*LogAnalyticsCl
 		ruleId:     ruleId,
 		streamName: streamName,
 	}, nil
+}
+
+type LogAnalyticsClientOptions struct {
+	CustomCredential azcore.TokenCredential
+	CustomClient     AzureClient
+}
+
+type LogAnalyticsClientOption func(*LogAnalyticsClientOptions)
+
+func WithCustomCredential(cred azcore.TokenCredential) LogAnalyticsClientOption {
+	return func(options *LogAnalyticsClientOptions) {
+		options.CustomCredential = cred
+	}
+}
+
+func WithCustomClient(client AzureClient) LogAnalyticsClientOption {
+	return func(options *LogAnalyticsClientOptions) {
+		options.CustomClient = client
+	}
 }
 
 func getCredential() (azcore.TokenCredential, error) {
