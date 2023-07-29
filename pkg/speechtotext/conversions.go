@@ -68,6 +68,10 @@ func downloadFile(url string, fileName string) error {
 	for {
 		n, err := reader.Read(buffer)
 		if err == io.EOF {
+			_, err = file.Write(buffer[0:n])
+			if err != nil {
+				fmt.Println("Error writing last bytes to the file")
+			}
 			fmt.Println("Done reading file.")
 			break
 		}
