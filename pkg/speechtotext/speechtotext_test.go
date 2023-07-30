@@ -27,7 +27,7 @@ func TestHandleAudioLink_Success(t *testing.T) {
 						},
 					},
 				})
-				time.Sleep(time.Second) // delay to simulate processing time
+				time.Sleep(10 * time.Millisecond) // delay to simulate processing time
 				// Simulate a Cancellation event
 				eventHandler(&speechtotext.SDKWrapperEvent{
 					EventType: speechtotext.Cancellation,
