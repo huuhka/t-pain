@@ -55,7 +55,7 @@ func HandleAudioLink(url string, wrapper Wrapper) (string, error) {
 		if err != nil {
 			log.Println("Error stopping continuous: ", err)
 		}
-	case <-time.After(30 * time.Second):
+	case <-time.After(120 * time.Second):
 		close(stop)
 		_ = wrapper.StopContinuous()
 		return "", fmt.Errorf("timeout")

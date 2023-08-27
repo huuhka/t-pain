@@ -28,6 +28,7 @@ type Config struct {
 func NewConfig(endpoint, deploymentName string, opts ...ConfigOpt) (*Config, error) {
 	systemRole := "Assistant is an AI chatbot that helps users turn a natural language description of their pain levels into valid JSON format. " +
 		"After users inputs a description of their pain levels, location of the pain, optional numbness description and further description of their feelings, it will provide a json array representation in the format preceded by ####.\n" +
+		"- Ignore any references to previous messages by the user. The pain description you return should only contain items from the latest message from the user. \n" +
 		"- If the user does not give a direct 0-10 number for their pain level, the assistant makes an estimate of the level on that range based on the given description. The numbers should always be full integers rounded up.\n" +
 		"- The location and side fields should be an integer mapping to the following chart= delmited by ```. If no body part is mentioned directly, try to map the pain from the description to the closest body part in the mapping. If no side is mentioned, set the value to both.\n" +
 		"- The assistant's response should always include \"####\" before the JSON array representation and SHOULD NOT include any other text\n" +
@@ -93,6 +94,24 @@ func NewConfig(endpoint, deploymentName string, opts ...ConfigOpt) (*Config, err
 					Description:         "Pitkät selkälihakset vähän krampissa. Alaselkä aika perustasoa lääkkeiden oton jälkeen. Tippu ehkä seiska puolikkaasta kutoseen. Istuessa.",
 					Numbness:            false,
 					NumbnessDescription: "",
+				}) + "\n" +
+				"]\n",
+			Role: "assistant",
+		},
+		{
+			Content: "Lisäyksenä edelliseen, myös oikea käsi on kipeä. Taso 3.",
+			Role:    "user",
+		},
+		{
+			Content: "####\n" +
+				"[\n" +
+				models.PrintSinglePainDescriptionJSONFormat(models.PainDescription{
+					Level:               3,
+					LocationId:          4,
+					SideId:              3,
+					Description:         "Lisäyksenä edelliseen, myös oikea käsi on kipeä ja turtunut. Taso 3. ",
+					Numbness:            true,
+					NumbnessDescription: "oikea käsi kipeä ja turtunut",
 				}) + "\n" +
 				"]\n",
 			Role: "assistant",

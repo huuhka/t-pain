@@ -72,8 +72,9 @@ func NewWrapper(subscription string, region string) (*SDKWrapper, error) {
 	defer config.Close()
 
 	autodetect, err := speech.NewAutoDetectSourceLanguageConfigFromLanguages([]string{
-		"en-US",
-		"en-GB",
+		// TODO: Add to config instead
+		//"en-US",
+		//"en-GB",
 		"fi-FI",
 	})
 	if err != nil {
