@@ -55,6 +55,7 @@ New-AzResourceGroupDeployment -ResourceGroupName "t-pain-prod" -TemplateFile ./d
 
 # Still missing
 
+- Should change to using the official [Azure OpenAI Service Go SDK](https://pkg.go.dev/github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai#section-readme) instead of my own implementation for better results
 - First implementation of the visualization on top of the data (e.g. Azure Workbooks)
 - Health check support in the container
 - /about or other commands support
